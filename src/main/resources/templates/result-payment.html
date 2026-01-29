@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Payment Result</title>
+</head>
+<body>
+
+<h2>Payment Result</h2>
+
+<p><b>Result Code:</b> <span th:text="${resultCd}"></span></p>
+<p><b>Message:</b> <span th:text="${resultMsg}"></span></p>
+<p><b>Invoice No:</b> <span th:text="${invoiceNo}"></span></p>
+<p><b>Amount:</b> <span th:text="${amount}"></span></p>
+
+<div th:if="${resultCd == '00_000'}">
+    <h3 style="color:green">Payment Success</h3>
+</div>
+
+<div th:if="${resultCd != '00_000'}">
+    <h3 style="color:red">Payment Failed</h3>
+</div>
+
+</body>
+</html>

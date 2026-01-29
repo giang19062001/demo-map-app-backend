@@ -1,0 +1,24 @@
+package com.vietq.demo_map_app_backend.utils
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class LatLngRouter(
+    val lat: Double,
+    val lon: Double
+)
+val routersSimulatorDefault: List<LatLngRouter> = listOf(
+    LatLngRouter(10.782364119849476, 106.69621092604926),
+    LatLngRouter(10.781715424158197, 106.69693759024877),
+    LatLngRouter(10.780947456324414, 106.69778247553012),
+    LatLngRouter(10.780403679243127, 106.6983800560274),
+    LatLngRouter(10.78081694552263, 106.6989296947273),
+    LatLngRouter(10.781528131936296, 106.69955278430412),
+    LatLngRouter(10.782428720452709, 106.7003927670994),
+    LatLngRouter(10.783244741941326, 106.70115712034472),
+    LatLngRouter(10.78398639693408, 106.70188685546962),
+    LatLngRouter(10.78462202397196, 106.70257486810084),
+    LatLngRouter(10.78518260767742, 106.70300202293312),
+    LatLngRouter(10.784664418540872, 106.70358211031828),
+    LatLngRouter(10.783830337109997, 106.70443163671452),
+    LatLngRouter(10.783318487891645, 106.70496372139738)
+)
