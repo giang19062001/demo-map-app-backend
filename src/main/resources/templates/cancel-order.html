@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Cancel Order</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+
+        .table-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 0;
+        }
+
+        thead {
+            background-color: #f1f5f9;
+        }
+
+        th {
+            padding: 16px 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #475569;
+            border-bottom: 2px solid #e2e8f0;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        td {
+            padding: 16px 12px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #334155;
+        }
+
+        tbody tr {
+            transition: background-color 0.2s ease;
+        }
+
+        tbody tr:hover {
+            background-color: #f8fafc;
+        }
+
+        /* Button styles */
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.875rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-danger {
+            font-size: 17px;
+            background-color: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #dc2626;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(239, 68, 68, 0.2);
+        }
+
+        .btn-secondary {
+            background-color: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #4b5563;
+            transform: translateY(-1px);
+        }
+
+        .btn-cancel-each {
+            font-size: 17px;
+            background-color: transparent;
+            color: #e0841a;
+            border: 1px solid #e0841a;
+        }
+
+        .btn-cancel-each:hover {
+            background-color: #ff8b07;
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* select user */
+
+        .header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            padding: 12px 16px;
+            background: #f8f9fb;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .page-title {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .user-filter {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .user-filter label {
+            font-size: 17px;
+            font-weight: 600;
+            color: #6b7280;
+        }
+
+        .user-filter select {
+            width: 220px;
+            padding: 6px 10px;
+            font-size: 14px;
+            border-radius: 6px;
+            border: 1px solid #d1d5db;
+            background-color: #fff;
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .user-filter select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
+
+        /* Expand row */
+        .expand-row {
+            background: #f8fafc;
+        }
+
+        .expand-row>td {
+            padding: 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .flex-container {
+            display: flex;
+            gap: 24px;
+            padding: 20px;
+        }
+
+        .box {
+            flex: 1;
+            border: 1px solid #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .box h4 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-weight: 600;
+            font-size: 1.1rem;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .inner-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .inner-table th {
+            background-color: #f8fafc;
+            padding: 10px 8px;
+            font-size: 0.8rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .inner-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.9rem;
+        }
+
+        .inner-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .empty-message {
+            color: #94a3b8;
+            font-style: italic;
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .modal-content {
+            background: #fff;
+            padding: 30px;
+            width: 400px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-content h4 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            font-size: 1.25rem;
+        }
+
+        .modal-content input {
+            width: 100%;
+            padding: 12px 14px;
+            margin: 10px 0 20px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .modal-content input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        /* Status and labels */
+        .order-id {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .field-normal {
+            color: #475569;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .flex-container {
+                flex-direction: column;
+                gap: 15px;
+                padding: 15px;
+            }
+
+            .btn-group {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .modal-content {
+                width: 90%;
+                max-width: 350px;
+                padding: 20px;
+            }
+        }
+
+        /* Badge for cancelled items */
+        .cancelled-badge {
+            display: inline-block;
+            background-color: #fee2e2;
+            color: #991b1b;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-left: 8px;
+        }
+
+        /* Loading state */
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header-bar">
+            <h2 class="page-title">Cancel Order</h2>
+
+            <div class="user-filter">
+                <label for="userSelect">User</label>
+                <select id="userSelect" onchange="onUserChange()">
+                    <option value="" selected disabled>Select user</option>
+                </select>
+            </div>
+        </div>
+
+
+
+        <div class="table-container">
+            <table id="orderTable">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Customer</th>
+                        <th>Payment status</th>
+                        <th>Amount</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- Modal -->
+        <div class="modal" id="cancelModal">
+            <div class="modal-content">
+                <h4>Cancel Item</h4>
+                <p style="margin-bottom: 15px; color: #64748b;">Enter the quantity you want to cancel for this item.</p>
+                <input type="hidden" id="currentQty">
+                <input type="number" id="cancelQty" placeholder="Enter quantity" min="1">
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+                    <button class="btn btn-danger" onclick="submitCancelItem()">Cancel Item</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const host = "http://localhost:8502"
+        let currentOrderCode = null;
+        let currentItemId = null;
+        let userList = [];
+        let orderList = [];
+
+        document.addEventListener("DOMContentLoaded", () => {
+            loadUsers();
+        });
+
+
+        function loadUsers() {
+            fetch(host + "/api/user/getUsers")
+                .then(res => res.json())
+                .then(data => {
+                    userList = data;
+                    renderUserSelect(data);
+
+                    // auto select user 1st
+                    if (data.length > 0) {
+                        const select = document.getElementById("userSelect");
+                        select.value = data[0].id;
+                        loadOrders(data[0].id);
+                    }
+                });
+        }
+
+        function loadOrders(userId) {
+            const userSelected = document.getElementById("userSelect").value
+            fetch(`${host}/api/order/getOrders?userId=${userId ?? userSelected}`)
+                .then(res => res.json())
+                .then(data => {
+                    orderList = data;
+                    renderOrders(data);
+                });
+        }
+
+        function renderUserSelect(users) {
+            const select = document.getElementById("userSelect");
+            select.innerHTML = `<option value="0">-- Select User --</option>`;
+
+            users.forEach(u => {
+                const opt = document.createElement("option");
+                opt.value = u.id;
+                opt.textContent = u.name;
+                select.appendChild(opt);
+            });
+        }
+
+        function renderOrders(orders) {
+            const tbody = document.querySelector("#orderTable tbody");
+            tbody.innerHTML = "";
+
+            orders.forEach(order => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td><span class="order-id">${order.orderCode}</span></td>
+                    <td class="field-normal">${order.ordererName}</td>
+                    <td class="field-normal">${order.paymentStatus}</td>
+                    <td class="field-normal">${order.amount}</td>
+
+                    <td>
+                        <div class="btn-group">
+                            <button class="btn btn-danger" onclick="cancelAll('${order.orderCode}')">Cancel Order</button>
+                            <button class="btn btn-cancel-each" onclick="toggleExpand('${order.orderCode}', this)">Cancel Each Item</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function onUserChange() {
+            const userId = document.getElementById("userSelect").value;
+            loadOrders(userId);
+        }
+
+
+
+        function cancelAll(orderCode) {
+            if (!confirm("Are you sure you want to cancel this entire order?")) return;
+
+            fetch(`/api/orders/${orderCode}/cancel-all`, { method: "POST" })
+                .then(() => loadOrders());
+        }
+
+        function toggleExpand(orderCode, btn) {
+            const tr = btn.closest("tr");
+
+            // close expand
+            if (tr.nextSibling && tr.nextSibling.classList.contains("expand-row")) {
+                tr.nextSibling.remove();
+                btn.textContent = "Cancel by Item";
+                return;
+            }
+
+            const order = orderList.find(o => o.orderCode === orderCode);
+            if (!order) return;
+
+            const expandTr = document.createElement("tr");
+            expandTr.className = "expand-row";
+            expandTr.innerHTML = `
+                <td colspan="5">
+                    <div class="flex-container">
+                        <div class="box">
+                            <h4>Items in Order</h4>
+                            ${renderItemList(order.cartData, orderCode)}
+                        </div>
+                        <div class="box">
+                            <h4>Cancelled Items <span class="cancelled-badge">${order.cartDataCancel ? order.cartDataCancel.length : 0}</span></h4>
+                            ${renderCanceledList(order.cartDataCancel)}
+                        </div>
+                    </div>
+                </td>
+            `;
+
+            tr.after(expandTr);
+            btn.textContent = "Hide Items";
+        }
+
+        function renderItemList(items, orderCode) {
+            if (!items || !items.length) return "<div class='empty-message'>Empty list</div>";
+
+            return `
+                <table class="inner-table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Price</th>
+                            <th>Qty</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${items.map(i => `
+                            <tr>
+                                <td>${i.name}</td>
+                                <td>$${i.price}</td>
+                                <td>${i.quantity}</td>
+                                <td>
+                                    <button class="btn btn-danger btn-sm" onclick="openModal('${orderCode}','${i.id}', '${i.quantity}')">Cancel</button>
+                                </td>
+                            </tr>
+                        `).join("")}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function renderCanceledList(items) {
+            if (!items || !items.length) return "<div class='empty-message'>No items cancelled yet</div>";
+
+            return `
+                <table class="inner-table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Price</th>
+                            <th>Cancelled Qty</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${items.map(i => `
+                            <tr>
+                                <td>${i.name}</td>
+                                <td>$${i.price}</td>
+                                <td>${i.quantity}</td>
+                            </tr>
+                        `).join("")}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function openModal(orderCode, itemId, quantity) {
+            currentOrderCode = orderCode;
+            currentItemId = itemId;
+            document.getElementById("currentQty").value = quantity;
+            document.getElementById("cancelQty").value = "";
+            document.getElementById("cancelModal").style.display = "flex";
+        }
+
+        function closeModal() {
+            document.getElementById("cancelModal").style.display = "none";
+        }
+
+        function submitCancelItem() {
+            const cancelQty = document.getElementById("cancelQty").value;
+            const currentQty = document.getElementById("currentQty").value;
+
+            if (!cancelQty || cancelQty <= 0) {
+                alert("Please enter a valid quantity");
+                return;
+            }
+
+             if (cancelQty > currentQty) {
+                alert("Cancellations cannot exceed the available quantity");
+                return;
+            }
+
+            fetch(`/api/orders/${currentOrderCode}/items/${currentItemId}/cancel`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ quantity: cancelQty })
+            }).then(() => {
+                closeModal();
+                loadOrders();
+            });
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function (event) {
+            const modal = document.getElementById("cancelModal");
+            if (event.target === modal) {
+                closeModal();
+            }
+        };
+    </script>
+</body>
+
+</html>

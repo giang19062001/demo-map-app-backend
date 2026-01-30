@@ -42,5 +42,4 @@ out/
 
 ### mine ####
 application.yaml
-db.sql
 local.properties

@@ -16,7 +16,7 @@ class MartController(
 ) {
 
     @Operation(
-        summary = "Lấy danh sách mart gần vị trí user hiện tại",
+        summary = "Get list of Mars nearby User location",
     )
     @GetMapping("/nearby")
     fun getNearbyMarts(@ParameterObject dto : MartRequestDto): List<MartResponseDto> {

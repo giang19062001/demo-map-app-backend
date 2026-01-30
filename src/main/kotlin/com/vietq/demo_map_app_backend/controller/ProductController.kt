@@ -19,12 +19,12 @@ class ProductController(
 
 
     @Operation(
-        summary = "Lấy danh sách product theo category",
+        summary = "Get product list by category",
     )
     @GetMapping("/getProducts")
     fun getNearbyMarts(
         @Parameter(
-            description = "ID của category. 0 là lấy tất cả sản phẩm, category ID > 0 là lọc sản phẩm theo thể loại",
+            description = "ID of category: 0 is get product list by all categories, category ID > 0 is filtering product by specific category",
         )
         @RequestParam(defaultValue = "0") categoryId: Long
     ): List<ProductResponseDto> {

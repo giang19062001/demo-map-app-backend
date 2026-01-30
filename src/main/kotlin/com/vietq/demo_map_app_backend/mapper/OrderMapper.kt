@@ -40,6 +40,7 @@ class OrderMapper {
             refundStatus = r[ORDER.REFUNDSTATUS]!!.name,
             cancelStatus = r[ORDER.CANCELSTATUS]!!.name,
             cartData = cartItems,
+            cartDataCancel = emptyList(),
             cartTotal = r[ORDER.CARTTOTAL]!!,
             discount = r[ORDER.DISCOUNT]!!,
             deliveryFee = r[ORDER.DELIVERYFEE]!!,

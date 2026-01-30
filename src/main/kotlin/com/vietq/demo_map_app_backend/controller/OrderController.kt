@@ -19,12 +19,12 @@ class OrderController(
     private val orderService: OrderService
 ) {
     @Operation(
-        summary = "Lấy danh sách order theo id của user",
+        summary = "Get order list by userId",
     )
     @GetMapping("/getOrders")
     fun getOrders(
         @Parameter(
-            description = "ID của user - hardcode phía App ( 1 Or 2)",
+            description = "ID user: 1, 2, 3",
         )
         @RequestParam(defaultValue = "1") userId: Long
     ): List<OrderResponseDto> {
@@ -32,7 +32,7 @@ class OrderController(
     }
 
     @Operation(
-        summary = "Lấy danh sách order chi tiết ",
+        summary = "Get order detail by id",
     )
     @GetMapping("/getOrder/{id}")
     fun getOrderById(@PathVariable id: Long): ResponseEntity<OrderResponseDto> {
@@ -42,7 +42,7 @@ class OrderController(
     }
 
     @Operation(
-        summary = "cập nhập order với trạng thái là hoàn thành",
+        summary = "Update order delivery success (simulator)",
     )
     @PutMapping("/markAsCompleteOrder/{id}")
     fun markAsCompleteOrder(@PathVariable id: Long): ResponseEntity<Boolean> {

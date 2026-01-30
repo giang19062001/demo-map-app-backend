@@ -14,6 +14,21 @@ class UserRepository(
     private val userMapper: UserMapper
 ) {
 
+    fun getUsers(): List<UserResponseDto> {
+        return dsl
+            .select(
+                USER.ID,
+                USER.NAME,
+                USER.PHONE,
+                USER.EMAIL,
+                USER.ADDRESS,
+            )
+            .from(USER)
+            .fetch { r ->
+                userMapper.toResponse(r)
+            }
+    }
+
     fun getUser(userId: Long): UserResponseDto? {
         return dsl
             .select(
@@ -29,6 +44,7 @@ class UserRepository(
                 userMapper.toResponse(r)
             }
     }
+
 
 
 }

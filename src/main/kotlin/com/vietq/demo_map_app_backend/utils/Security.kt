@@ -10,6 +10,10 @@ fun sha256(input: String): String {
 
     return bytes.joinToString("") { "%02x".format(it) }
 }
+fun isSha256Equal(hash1: String, hash2: String): Boolean {
+    return hash1.trim().equals(hash2.trim(), ignoreCase = true)
+}
+
 fun hexToBytes(hex: String): ByteArray {
     return hex.chunked(2)
         .map { it.toInt(16).toByte() }

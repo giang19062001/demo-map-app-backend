@@ -8,8 +8,11 @@ import org.springframework.stereotype.Service
 class UserService(
     private val userRepository: UserRepository,
 ) {
-
+    fun getUsers(): List<UserResponseDto> {
+        return userRepository.getUsers()
+    }
     fun getUser(userId: Long): UserResponseDto? {
         return userRepository.getUser(userId)
     }
+
 }

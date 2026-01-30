@@ -1,6 +1,6 @@
 package com.vietq.demo_map_app_backend.controllerView
 
-import PaymentCallbackUrlDto
+import PaymentCallbackDto
 import com.vietq.demo_map_app_backend.service.PaymentService
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
@@ -13,9 +13,16 @@ class PaymentViewController(
     private val paymentService: PaymentService
 ) {
 
+    // FOR TESTING CANCEL
+    @GetMapping("/cancel")
+    fun cancel(): String {
+        return "cancel-order"
+    }
+
+    // FOR EPAY CALLBACK
     @GetMapping("/view/payment/callBackUrl")
     fun paymentCallback(
-        @ModelAttribute dto: PaymentCallbackUrlDto,
+        @ModelAttribute dto: PaymentCallbackDto,
         model: Model
     ): String {
 

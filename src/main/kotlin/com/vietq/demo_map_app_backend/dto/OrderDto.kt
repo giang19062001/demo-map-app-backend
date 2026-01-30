@@ -1,6 +1,10 @@
 package com.vietq.demo_map_app_backend.dto
 
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.DecimalMin
+import jakarta.validation.constraints.Min
+import jakarta.validation.constraints.NotEmpty
+import jakarta.validation.constraints.Size
 import java.math.BigDecimal
 import java.time.LocalDateTime
 
@@ -21,6 +25,8 @@ data class CreateOrderDto(
         example = "[{\"id\": 1, \"name\": \"Product 1\", \"image\": \"/uploads/products/1.png\", \"price\": 15000, \"quantity\": 2, \"categoryId\": 4, \"categoryName\": \"Beverage\"}, {\"id\": 2, \"name\": \"Product 2\", \"image\": \"/uploads/products/2.png\", \"price\": 15000, \"quantity\": 2, \"categoryId\": 2, \"categoryName\": \"Meat\"}, {\"id\": 3, \"name\": \"Product 3\", \"image\": \"/uploads/products/3.png\", \"price\": 15000, \"quantity\": 2, \"categoryId\": 1, \"categoryName\": \"Fruit\"}]",
         required = true
     )
+    @field:NotEmpty(message = "cartData must not be empty")
+    @field:Size(min = 1, message = "cartData must contain at least 1 item")
     val cartData: List<CartDto>,
 
     @field:Schema(
@@ -64,6 +70,11 @@ data class CreateOrderDto(
         example = "89500",
         required = true
     )
+    @field:DecimalMin(
+        value = "1",
+        inclusive = true,
+        message = "Amount must be greater than 0"
+    )
     val amount: BigDecimal,
     )
 
@@ -95,8 +106,13 @@ data class CartDto(
     val id: Long,
     val name: String,
     val image: String,
+
+    @field:DecimalMin("1")
     val price: BigDecimal,
+
+    @field:Min(1)
     val quantity: Int,
+
     val categoryId: Long,
     val categoryName: String
 )
@@ -115,6 +131,7 @@ data class OrderResponseDto(
     val refundStatus: String,
     val cancelStatus: String,
     val cartData: List<CartDto>,
+    val cartDataCancel: List<CartDto>,
     val cartTotal: BigDecimal,
     val discount: BigDecimal,
     val deliveryFee: BigDecimal,

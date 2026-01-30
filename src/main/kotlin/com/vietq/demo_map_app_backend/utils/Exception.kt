@@ -5,6 +5,7 @@ import org.apache.coyote.BadRequestException
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 
@@ -34,6 +35,20 @@ class GlobalExceptionHandler {
             message = ex.message ?: ExceptionErrorEnum.BAD_REQUEST.defaultMessage
         )
         return ResponseEntity.status(ExceptionErrorEnum.BAD_REQUEST.status).body(error)
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException::class)
+    fun handleValidationException(ex: MethodArgumentNotValidException): ResponseEntity<ErrorResponse> {
+        val message = ex.bindingResult.fieldErrors
+            .joinToString(", ") { "${it.field}: ${it.defaultMessage}" }
+
+        val error = ErrorResponse(
+            success = false,
+            data = null,
+            statusCode = HttpStatus.BAD_REQUEST.value(),
+            message = message
+        )
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error)
     }
 }
 
