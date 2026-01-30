@@ -2,7 +2,7 @@ package com.vietq.demo_map_app_backend.service
 
 import com.study.jooq.enums.OrderOrderstatus
 import com.study.jooq.enums.OrderPaymentstatus
-import com.vietq.demo_map_app_backend.dto.CreateOrderDeliveryDto
+import com.vietq.demo_map_app_backend.dto.OrderDeliveryInfoDto
 import com.vietq.demo_map_app_backend.dto.CreateOrderDto
 import com.vietq.demo_map_app_backend.dto.OrderResponseDto
 import com.vietq.demo_map_app_backend.repository.OrderRepository
@@ -27,7 +27,7 @@ class OrderService(
     fun markAsCompleteOrder(orderId: Long): Boolean {
         return orderRepository.markAsCompleteOrder(orderId)
     }
-    fun insertOrder(dto: CreateOrderDto, orderCode: String, userDeliveryInfo: CreateOrderDeliveryDto): Long {
+    fun insertOrder(dto: CreateOrderDto, orderCode: String, userDeliveryInfo: OrderDeliveryInfoDto): Long {
         return orderRepository.insertOrder(dto, orderCode, userDeliveryInfo)
     }
 

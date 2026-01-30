@@ -27,7 +27,7 @@ data class CreateOrderDto(
     )
     @field:NotEmpty(message = "cartData must not be empty")
     @field:Size(min = 1, message = "cartData must contain at least 1 item")
-    val cartData: List<CartDto>,
+    val cartData: List<CartItemDto>,
 
     @field:Schema(
         example = "10",
@@ -95,27 +95,25 @@ data class CreateOrderResponseDto(
     val merchantToken: String
 )
 
-data class CreateOrderDeliveryDto(
+data class OrderDeliveryInfoDto(
     val shipperId: Long,
     val ordererName: String,
     val ordererPhone: String,
     val ordererAddress: String,
 )
 
-data class CartDto(
+data class CartItemDto(
     val id: Long,
     val name: String,
     val image: String,
-
     @field:DecimalMin("1")
     val price: BigDecimal,
-
     @field:Min(1)
     val quantity: Int,
-
     val categoryId: Long,
     val categoryName: String
 )
+
 
 data class OrderResponseDto(
     val id: Long,
@@ -130,8 +128,8 @@ data class OrderResponseDto(
     val paymentStatus: String,
     val refundStatus: String,
     val cancelStatus: String,
-    val cartData: List<CartDto>,
-    val cartDataCancel: List<CartDto>,
+    val cartData: List<CartItemDto>,
+    val cartDataCancel: List<CartItemDto>,
     val cartTotal: BigDecimal,
     val discount: BigDecimal,
     val deliveryFee: BigDecimal,

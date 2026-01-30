@@ -4,7 +4,8 @@ import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.study.jooq.tables.Mart.Companion.MART
 import com.study.jooq.tables.Order.Companion.ORDER
-import com.vietq.demo_map_app_backend.dto.CartDto
+import com.study.jooq.tables.OrderCartItems.Companion.ORDER_CART_ITEMS
+import com.vietq.demo_map_app_backend.dto.CartItemDto
 import com.vietq.demo_map_app_backend.dto.OrderResponseDto
 import org.jooq.Field
 import org.jooq.Record
@@ -14,18 +15,7 @@ import org.springframework.stereotype.Component
 class OrderMapper {
 
     private val objectMapper = jacksonObjectMapper()
-    fun toResponse(
-        r: Record
-    ): OrderResponseDto {
-
-        val cartItems: List<CartDto> =
-            r[ORDER.CARTDATA]?.data()?.let { json ->
-                objectMapper.readValue(
-                    json,
-                    object : TypeReference<List<CartDto>>() {}
-                )
-            } ?: emptyList()
-
+    fun toOrderResponse(r: Record): OrderResponseDto {
         return OrderResponseDto(
             id = r[ORDER.ID]!!,
             martId = r[ORDER.MARTID]!!,
@@ -39,7 +29,7 @@ class OrderMapper {
             paymentStatus = r[ORDER.PAYMENTSTATUS]!!.name,
             refundStatus = r[ORDER.REFUNDSTATUS]!!.name,
             cancelStatus = r[ORDER.CANCELSTATUS]!!.name,
-            cartData = cartItems,
+            cartData = emptyList(),
             cartDataCancel = emptyList(),
             cartTotal = r[ORDER.CARTTOTAL]!!,
             discount = r[ORDER.DISCOUNT]!!,
@@ -50,6 +40,20 @@ class OrderMapper {
             amount = r[ORDER.AMOUNT]!!,
             createdAt = r[ORDER.CREATEDAT]!!,
             updatedAt = r[ORDER.UPDATEDAT]
+        )
+    }
+
+
+    fun toCartItemResponse(r: Record): CartItemDto {
+        return CartItemDto(
+            id = r[ORDER_CART_ITEMS.PRODUCTID]!!,
+            name = r[ORDER_CART_ITEMS.NAME]!!,
+            image = r[ORDER_CART_ITEMS.IMAGE]!!,
+            price = r[ORDER_CART_ITEMS.PRICE]!!,
+            quantity = r[ORDER_CART_ITEMS.QUANTITY]!!,
+            categoryId = r[ORDER_CART_ITEMS.CATEGORYID]!!,
+            categoryName = r[ORDER_CART_ITEMS.CATEGORYNAME]!!,
+
         )
     }
 }

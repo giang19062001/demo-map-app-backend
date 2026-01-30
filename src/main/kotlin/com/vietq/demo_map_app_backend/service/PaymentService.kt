@@ -9,7 +9,7 @@ import com.study.jooq.enums.OrderPaymentstatus
 import com.vietq.demo_map_app_backend.component.CallApiComponent
 import com.vietq.demo_map_app_backend.config.EpayConfig
 import com.vietq.demo_map_app_backend.dto.CreateOrderDto
-import com.vietq.demo_map_app_backend.dto.CreateOrderDeliveryDto
+import com.vietq.demo_map_app_backend.dto.OrderDeliveryInfoDto
 import com.vietq.demo_map_app_backend.dto.CreateOrderResponseDto
 import com.vietq.demo_map_app_backend.mapper.PaymentMapper
 import com.vietq.demo_map_app_backend.repository.PaymentRepository
@@ -62,7 +62,7 @@ class PaymentService(
 
         // GET INFO USER
         val userInfo = userService.getUser(dto.userId) ?: throw BadRequestException("User not found")
-        val userDeliveryInfo = CreateOrderDeliveryDto(
+        val userDeliveryInfo = OrderDeliveryInfoDto(
             shipperId = dto.userId,  // hardcode shipper
             ordererName = userInfo.name,
             ordererPhone = userInfo.phone,

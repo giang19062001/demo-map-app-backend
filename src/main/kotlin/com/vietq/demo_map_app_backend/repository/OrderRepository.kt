@@ -1,23 +1,22 @@
 package com.vietq.demo_map_app_backend.repository
+
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.study.jooq.enums.OrderCancelstatus
 import com.study.jooq.enums.OrderOrderstatus
 import com.study.jooq.enums.OrderPaymentstatus
 import com.study.jooq.enums.OrderRefundstatus
-import com.vietq.demo_map_app_backend.dto.CartDto
+import com.vietq.demo_map_app_backend.dto.CartItemDto
 import com.vietq.demo_map_app_backend.dto.OrderResponseDto
 import org.jooq.DSLContext
 import org.springframework.stereotype.Repository
 import com.study.jooq.tables.Order.Companion.ORDER
-import com.study.jooq.tables.Mart.Companion.MART
-import com.study.jooq.tables.OrderPaymentEpay.Companion.ORDER_PAYMENT_EPAY
+import com.study.jooq.tables.OrderCartItems.Companion.ORDER_CART_ITEMS
 import com.vietq.demo_map_app_backend.dto.CreateOrderDto
-import com.vietq.demo_map_app_backend.dto.CreateOrderDeliveryDto
+import com.vietq.demo_map_app_backend.dto.OrderDeliveryInfoDto
 import com.vietq.demo_map_app_backend.mapper.OrderMapper
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import org.jooq.JSON
+import org.jooq.impl.DSL
 import java.time.LocalDateTime
 
 
@@ -26,71 +25,140 @@ class OrderRepository(
     private val dsl: DSLContext,
     private val orderMapper: OrderMapper
 ) {
-    fun insertOrder(dto: CreateOrderDto, orderCode: String, userDeliveryInfo: CreateOrderDeliveryDto): Long {
+    fun insertOrder(
+        dto: CreateOrderDto,
+        orderCode: String,
+        userDeliveryInfo: OrderDeliveryInfoDto
+    ): Long {
 
-        val objectMapper = jacksonObjectMapper()
+        return dsl.transactionResult { config ->
 
-        val cartDataJson = objectMapper.writeValueAsString(dto.cartData)
+            val ctx = DSL.using(config)
 
-        val record = dsl.insertInto(ORDER)
-            .set(ORDER.MARTID, dto.martId)
-            .set(ORDER.USERID, dto.userId)
-            .set(ORDER.SHIPPERID, userDeliveryInfo.shipperId)
-            .set(ORDER.ORDERCODE, orderCode)
-            .set(ORDER.ORDERERNAME, userDeliveryInfo.ordererName)
-            .set(ORDER.ORDERERPHONE, userDeliveryInfo.ordererPhone)
-            .set(ORDER.ORDERERADDRESS, userDeliveryInfo.ordererAddress)
-            .set(ORDER.ORDERSTATUS, OrderOrderstatus.WAITING)
-            .set(ORDER.PAYMENTSTATUS, OrderPaymentstatus.NOT_YET)
-            .set(ORDER.REFUNDSTATUS, OrderRefundstatus.NONE)
-            .set(ORDER.CANCELSTATUS, OrderCancelstatus.NONE)
-            .set(ORDER.CARTDATA, JSON.valueOf(cartDataJson))
-            .set(ORDER.CARTTOTAL, dto.cartTotal)
-            .set(ORDER.DISCOUNT, dto.discount)
-            .set(ORDER.DELIVERYFEE, dto.deliveryFee)
-            .set(ORDER.COUPONVOLUME, dto.couponVolume)
-            .set(ORDER.POINTVOLUME, dto.pointVolume)
-            .set(ORDER.POINTACCUMULATE, dto.pointAccumulate)
-            .set(ORDER.AMOUNT, dto.amount)
-            .set(ORDER.CREATEDAT, LocalDateTime.now())
-            .set(ORDER.UPDATEDAT, null as LocalDateTime?)
-            .returning(ORDER.ID)
-            .fetchOne()
+            // Insert ORDER
+            val orderId = ctx.insertInto(ORDER)
+                .set(ORDER.MARTID, dto.martId)
+                .set(ORDER.USERID, dto.userId)
+                .set(ORDER.SHIPPERID, userDeliveryInfo.shipperId)
+                .set(ORDER.ORDERCODE, orderCode)
+                .set(ORDER.ORDERERNAME, userDeliveryInfo.ordererName)
+                .set(ORDER.ORDERERPHONE, userDeliveryInfo.ordererPhone)
+                .set(ORDER.ORDERERADDRESS, userDeliveryInfo.ordererAddress)
+                .set(ORDER.ORDERSTATUS, OrderOrderstatus.WAITING)
+                .set(ORDER.PAYMENTSTATUS, OrderPaymentstatus.NOT_YET)
+                .set(ORDER.REFUNDSTATUS, OrderRefundstatus.NONE)
+                .set(ORDER.CANCELSTATUS, OrderCancelstatus.NONE)
+                .set(ORDER.CARTTOTAL, dto.cartTotal)
+                .set(ORDER.DISCOUNT, dto.discount)
+                .set(ORDER.DELIVERYFEE, dto.deliveryFee)
+                .set(ORDER.COUPONVOLUME, dto.couponVolume)
+                .set(ORDER.POINTVOLUME, dto.pointVolume)
+                .set(ORDER.POINTACCUMULATE, dto.pointAccumulate)
+                .set(ORDER.AMOUNT, dto.amount)
+                .set(ORDER.CREATEDAT, LocalDateTime.now())
+                .returning(ORDER.ID)
+                .fetchOne()
+                ?.get(ORDER.ID)
+                ?: throw IllegalStateException("Insert order failed")
 
-        return record?.get(ORDER.ID)
-            ?: throw IllegalStateException("Insert order failed")
+            // Insert cart items
+            dto.cartData.forEach { item ->
+
+                ctx.insertInto(ORDER_CART_ITEMS)
+                    .set(ORDER_CART_ITEMS.ORDERCODE, orderCode)
+                    .set(ORDER_CART_ITEMS.PRODUCTID, item.id)
+                    .set(ORDER_CART_ITEMS.NAME, item.name)
+                    .set(ORDER_CART_ITEMS.IMAGE, item.image)
+                    .set(ORDER_CART_ITEMS.PRICE, item.price)
+                    .set(ORDER_CART_ITEMS.QUANTITY, item.quantity)
+                    .set(ORDER_CART_ITEMS.CATEGORYID, item.categoryId)
+                    .set(ORDER_CART_ITEMS.CATEGORYNAME, item.categoryName)
+                    .set(ORDER_CART_ITEMS.CREATEDAT, LocalDateTime.now())
+                    .execute()
+            }
+
+            orderId
+        }
     }
 
+
     fun getOrders(userId: Long): List<OrderResponseDto> {
-        return dsl
+
+        val orders = dsl
             .selectFrom(ORDER)
             .where(ORDER.USERID.eq(userId))
             .orderBy(ORDER.CREATEDAT.desc())
-            .fetch { r ->
-                orderMapper.toResponse(r)
+            .fetch { r ->  orderMapper.toOrderResponse(r) }
+
+        val orderCodes = orders.map { it.orderCode }
+
+        val cartMap = dsl
+            .selectFrom(ORDER_CART_ITEMS)
+            .where(ORDER_CART_ITEMS.ORDERCODE.`in`(orderCodes))
+            .fetchGroups(
+                ORDER_CART_ITEMS.ORDERCODE
+            ) { r -> orderMapper.toCartItemResponse(r)
             }
+
+        return orders.map { order ->
+            order.copy(cartData = (cartMap[order.orderCode] ?: emptyList()))
+        }
     }
 
     fun getOrderById(orderId: Long): OrderResponseDto? {
-        return dsl
+
+        val order = dsl
             .selectFrom(ORDER)
             .where(ORDER.ID.eq(orderId))
             .fetchOne { r ->
-                orderMapper.toResponse(r)
-            }
-    }
+                orderMapper.toOrderResponse(r)
+            } ?: return null
 
+        val cartItems = dsl
+            .selectFrom(ORDER_CART_ITEMS)
+            .where(ORDER_CART_ITEMS.ORDERCODE.eq(order.orderCode))
+            .fetch { r ->
+                orderMapper.toCartItemResponse(r)
+            }
+
+        return order.copy(cartData = cartItems)
+    }
 
     fun getOrderByCode(orderCode: String): OrderResponseDto? {
 
-        return dsl
+        val order = dsl
             .selectFrom(ORDER)
             .where(ORDER.ORDERCODE.eq(orderCode))
             .fetchOne { r ->
-                orderMapper.toResponse(r)
+                orderMapper.toOrderResponse(r)
+            } ?: return null
 
+        val cartItems = dsl
+            .selectFrom(ORDER_CART_ITEMS)
+            .where(ORDER_CART_ITEMS.ORDERCODE.eq(orderCode))
+            .fetch { r ->
+                orderMapper.toCartItemResponse(r)
             }
+
+        return order.copy(cartData = cartItems)
     }
+
+    fun changePaymentStatusOrder(
+        orderCode: String,
+        paymentStatus: OrderPaymentstatus,
+        orderStatus: OrderOrderstatus
+    ): Boolean {
+        return dsl
+            .update(ORDER)
+            .set(ORDER.PAYMENTSTATUS, paymentStatus)
+            .set(ORDER.ORDERSTATUS, orderStatus)
+            .where(
+                ORDER.ORDERCODE.eq(orderCode)
+            )
+            .execute() > 0
+    }
+
+    // SIMULATOR
     fun markAsCompleteOrder(orderId: Long): Boolean {
         return dsl
             .update(ORDER)
@@ -102,16 +170,6 @@ class OrderRepository(
             .execute() > 0
     }
 
-    fun changePaymentStatusOrder(orderCode: String, paymentStatus: OrderPaymentstatus, orderStatus: OrderOrderstatus): Boolean {
-        return dsl
-            .update(ORDER)
-            .set(ORDER.PAYMENTSTATUS, paymentStatus)
-            .set(ORDER.ORDERSTATUS, orderStatus)
-            .where(
-                ORDER.ORDERCODE.eq(orderCode)
-            )
-            .execute() > 0
-    }
 
 
 

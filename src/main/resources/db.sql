@@ -50,7 +50,6 @@ CREATE TABLE `order` (
   `paymentStatus` enum('NOT_YET','PENDING','PAYMENT_SUCCESS','PAYMENT_FAIL') NOT NULL DEFAULT 'NOT_YET',
   `refundStatus` enum('NONE','REQUEST_REFUND','REFUND_APPROVED','REFUND_REFUSED') NOT NULL DEFAULT 'NONE',
   `cancelStatus` enum('NONE','ALL','APART') NOT NULL DEFAULT 'NONE',
-  `cartData` json NOT NULL,
   `cartTotal` decimal(9,2) NOT NULL,
   `discount` decimal(9,2) NOT NULL,
   `deliveryFee` decimal(9,2) NOT NULL,
@@ -64,18 +63,36 @@ CREATE TABLE `order` (
   UNIQUE KEY `orderCode_UNIQUE` (`orderCode`)
 )
 
-
-CREATE TABLE `order_cancel_items` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `orderCode` char(45) NOT NULL,
-  `productId` varchar(45) DEFAULT NULL,
-   `price`` decimal(9,2) NOT NULL,
-  `quantity` varchar(45) DEFAULT NULL,
-  `reason` varchar(255) DEFAULT NULL,
+CREATE TABLE order_cart_items (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    orderCode char(45) NOT NULL,
+    productId BIGINT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    image VARCHAR(255),
+    price DECIMAL(12,2) NOT NULL CHECK (price >= 1),
+    quantity INT NOT NULL CHECK (quantity >= 1),
+    categoryId BIGINT NOT NULL,
+    categoryName VARCHAR(255) NOT NULL,
   `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updatedAt` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
-)
+  `updatedAt` timestamp NULL DEFAULT NULL
+);
+
+CREATE TABLE order_cart_items_cancel (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    orderCode char(45) NOT NULL,
+    productId BIGINT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    image VARCHAR(255),
+    price DECIMAL(12,2) NOT NULL CHECK (price >= 1),
+    quantity INT NOT NULL CHECK (quantity >= 1),
+    categoryId BIGINT NOT NULL,
+    categoryName VARCHAR(255) NOT NULL,
+  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` timestamp NULL DEFAULT NULL
+);
+
+
+
 
 CREATE TABLE `order_payment_epay` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
