@@ -114,7 +114,6 @@ data class CartItemDto(
     val categoryName: String
 )
 
-
 data class OrderResponseDto(
     val id: Long,
     val martId: Long,
@@ -138,5 +137,33 @@ data class OrderResponseDto(
     val pointAccumulate: BigDecimal,
     val amount: BigDecimal,
     val createdAt: LocalDateTime,
-    val updatedAt: LocalDateTime?
+    val updatedAt: LocalDateTime?,
+)
+
+data class OrderAdminResponseDto(
+    val id: Long,
+    val martId: Long,
+    val userId: Long,
+    val shipperId: Long?,
+    val orderCode: String,
+    val ordererName: String,
+    val ordererPhone: String,
+    val ordererAddress: String,
+    val orderStatus: String,
+    val paymentStatus: String,
+    val refundStatus: String,
+    val cancelStatus: String,
+    val cartData: List<CartItemDto>,
+    val cartDataCancel: List<CartItemDto>,
+    val cartTotal: BigDecimal,
+    val discount: BigDecimal,
+    val deliveryFee: BigDecimal,
+    val couponVolume: BigDecimal,
+    val pointVolume: BigDecimal,
+    val pointAccumulate: BigDecimal,
+    val amount: BigDecimal,
+    val createdAt: LocalDateTime,
+    val updatedAt: LocalDateTime?,
+    val resultCd: String?,
+    val resultMsg: String?
 )

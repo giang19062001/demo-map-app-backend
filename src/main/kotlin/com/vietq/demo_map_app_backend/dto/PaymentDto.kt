@@ -1,5 +1,26 @@
 import com.study.jooq.enums.OrderPaymentEpayPaytype
 
+data class PaymentEpayResponseDto(
+    val orderCode: String,
+    val trxId: String?,
+    val merTrxId: String?,
+    val goodsNm: String?,
+    val buyerFirstNm: String?,
+    val buyerLastNm: String?,
+    val amount: String?,
+    val remainAmount: String?,
+    val payType:  OrderPaymentEpayPaytype?, // ENUM
+    val payOption: String?,
+    val bankId: String?,
+    val bankCode: String?,
+    val cardNo: String?,
+    val cardType: String?,
+    val cardTypeValue: String?,
+    val status: String?,
+    val resultCd: String,
+    val resultMsg: String
+)
+
 data class UpsertPaymentDto(
     val orderCode: String,
     val trxId: String,
@@ -37,12 +58,12 @@ data class PaymentCreateLinkResponseDto(
     val merchantToken: String?
 )
 data class PaymentCallbackDto(
-    val resultCd: String,
+    var resultCd: String,
     val resultMsg: String,
     val merId: String,
     val timeStamp: String,
     val invoiceNo: String,
-    val status: String,
+    var status: String,
     val merTrxId: String,
     val trxId: String,
     val amount: String,

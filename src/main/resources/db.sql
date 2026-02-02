@@ -104,7 +104,7 @@ CREATE TABLE `order_payment_epay` (
   `buyerLastNm` varchar(255) DEFAULT NULL,
   `amount` varchar(45) DEFAULT NULL,
   `remainAmount` varchar(45) DEFAULT NULL,
-  `payType` ENUM("IC", "IS", "DC", "EW", "VA", "QR", "PL", "CW") DEFAULT NULL,
+  `payType` ENUM("IC", "IS", "DC", "EW", "VA", "QR", "PL", "CW", "NO") DEFAULT NULL,
   `payOption` varchar(45) DEFAULT NULL,
   `bankId` varchar(45) DEFAULT NULL,
   `bankCode` varchar(45) DEFAULT NULL,
@@ -113,7 +113,7 @@ CREATE TABLE `order_payment_epay` (
   `cardTypeValue` varchar(45) DEFAULT NULL,
   `status` varchar(45) DEFAULT NULL,
   `resultCd` varchar(45) DEFAULT NULL,
-  `resultMsg` varchar(45) DEFAULT NULL,
+  `resultMsg` TEXT DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `orderCode_UNIQUE` (`orderCode`)
 )

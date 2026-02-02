@@ -4,6 +4,7 @@ import com.study.jooq.enums.OrderOrderstatus
 import com.study.jooq.enums.OrderPaymentstatus
 import com.vietq.demo_map_app_backend.dto.OrderDeliveryInfoDto
 import com.vietq.demo_map_app_backend.dto.CreateOrderDto
+import com.vietq.demo_map_app_backend.dto.OrderAdminResponseDto
 import com.vietq.demo_map_app_backend.dto.OrderResponseDto
 import com.vietq.demo_map_app_backend.repository.OrderRepository
 import org.springframework.stereotype.Service
@@ -14,6 +15,11 @@ class OrderService(
     private val orderRepository: OrderRepository,
 ) {
 
+    // ADMIN
+    fun getAdminOrders(userId: Long): List<OrderAdminResponseDto> {
+        return orderRepository.getAdminOrders(userId)
+    }
+    // APP
     fun getOrders(userId: Long): List<OrderResponseDto> {
         return orderRepository.getOrders(userId)
     }

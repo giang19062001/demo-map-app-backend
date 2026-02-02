@@ -12,7 +12,9 @@ import org.jooq.DSLContext
 import org.springframework.stereotype.Repository
 import com.study.jooq.tables.Order.Companion.ORDER
 import com.study.jooq.tables.OrderCartItems.Companion.ORDER_CART_ITEMS
+import com.study.jooq.tables.OrderPaymentEpay.Companion.ORDER_PAYMENT_EPAY
 import com.vietq.demo_map_app_backend.dto.CreateOrderDto
+import com.vietq.demo_map_app_backend.dto.OrderAdminResponseDto
 import com.vietq.demo_map_app_backend.dto.OrderDeliveryInfoDto
 import com.vietq.demo_map_app_backend.mapper.OrderMapper
 import org.jooq.JSON
@@ -25,6 +27,33 @@ class OrderRepository(
     private val dsl: DSLContext,
     private val orderMapper: OrderMapper
 ) {
+    // ADMIN
+    fun getAdminOrders(userId: Long): List<OrderAdminResponseDto> {
+        val orders = dsl
+            .select(ORDER.asterisk(), ORDER_PAYMENT_EPAY.RESULTCD, ORDER_PAYMENT_EPAY.RESULTMSG)
+            .from(ORDER) // Bắt đầu từ bảng chính
+            .leftJoin(ORDER_PAYMENT_EPAY)
+            .on(ORDER.ORDERCODE.eq(ORDER_PAYMENT_EPAY.ORDERCODE))
+            .where(ORDER.USERID.eq(userId))
+            .orderBy(ORDER.CREATEDAT.desc())
+            .fetch { r -> orderMapper.toOrderAdminResponse(r) }
+
+        val orderCodes = orders.map { it.orderCode }
+
+        val cartMap = dsl
+            .selectFrom(ORDER_CART_ITEMS)
+            .where(ORDER_CART_ITEMS.ORDERCODE.`in`(orderCodes))
+            .fetchGroups(
+                ORDER_CART_ITEMS.ORDERCODE
+            ) { r -> orderMapper.toCartItemResponse(r)
+            }
+
+        return orders.map { order ->
+            order.copy(cartData = (cartMap[order.orderCode] ?: emptyList()))
+        }
+    }
+
+    // APP
     fun insertOrder(
         dto: CreateOrderDto,
         orderCode: String,

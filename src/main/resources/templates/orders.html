@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Cancel Order</title>
+    <title>List of orders</title>
     <style>
         * {
             margin: 0;
@@ -20,7 +20,7 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 90vw;
             margin: 0 auto;
         }
 
@@ -320,6 +320,14 @@
         .field-normal {
             color: #475569;
         }
+        .field-normal.success {
+            color: #19722c;
+            font-weight: 500;
+        }
+        .field-normal.fail {
+            color: #ad3621;
+            font-weight: 500;
+        }
 
         /* Responsive */
         @media (max-width: 768px) {
@@ -369,7 +377,7 @@
 <body>
     <div class="container">
         <div class="header-bar">
-            <h2 class="page-title">Cancel Order</h2>
+            <h2 class="page-title">List of Orders</h2>
 
             <div class="user-filter">
                 <label for="userSelect">User</label>
@@ -387,7 +395,9 @@
                     <tr>
                         <th>Order ID</th>
                         <th>Customer</th>
-                        <th>Payment status</th>
+                        <th>Order Payment status</th>
+                        <th>Epay status</th>
+                        <th>Epay message</th>
                         <th>Amount</th>
                         <th>Actions</th>
                     </tr>
@@ -412,7 +422,7 @@
     </div>
 
     <script>
-        const host = "http://localhost:8502"
+        const host = window.location.origin;
         let currentOrderCode = null;
         let currentItemId = null;
         let userList = [];
@@ -441,7 +451,7 @@
 
         function loadOrders(userId) {
             const userSelected = document.getElementById("userSelect").value
-            fetch(`${host}/api/order/getOrders?userId=${userId ?? userSelected}`)
+            fetch(`${host}/api/admin/order/getOrders?userId=${userId ?? userSelected}`)
                 .then(res => res.json())
                 .then(data => {
                     orderList = data;
@@ -467,17 +477,22 @@
 
             orders.forEach(order => {
                 const tr = document.createElement("tr");
+                const isSuccess = order.paymentStatus == "PAYMENT_SUCCESS" || order.resultCd == "00_000"
+                const isFail = order.paymentStatus == "PAYMENT_FAIL" || (String(order.resultCd).trim() !== "" && order.resultCd != "00_000")
                 tr.innerHTML = `
                     <td><span class="order-id">${order.orderCode}</span></td>
                     <td class="field-normal">${order.ordererName}</td>
-                    <td class="field-normal">${order.paymentStatus}</td>
+                    <td class="field-normal ${isSuccess ? "success" : ""}  ${isFail ? "fail" : ""}">${order.paymentStatus}</td>
+                    <td class="field-normal">${order.resultCd}</td>
+                    <td class="field-normal ${isSuccess ? "success" : ""}  ${isFail ? "fail" : ""}">${order.resultMsg}</td>
                     <td class="field-normal">${order.amount}</td>
 
                     <td>
-                        <div class="btn-group">
+                        ${isSuccess
+                        ? `<div class="btn-group">
                             <button class="btn btn-danger" onclick="cancelAll('${order.orderCode}')">Cancel Order</button>
                             <button class="btn btn-cancel-each" onclick="toggleExpand('${order.orderCode}', this)">Cancel Each Item</button>
-                        </div>
+                        </div>` : ""}
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -514,7 +529,7 @@
             const expandTr = document.createElement("tr");
             expandTr.className = "expand-row";
             expandTr.innerHTML = `
-                <td colspan="5">
+                <td colspan="7">
                     <div class="flex-container">
                         <div class="box">
                             <h4>Items in Order</h4>

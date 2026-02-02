@@ -25,15 +25,63 @@ import java.util.*
 @RequestMapping("/api/payment")
 class PaymentController(private val paymentService: PaymentService) {
     @Operation(
-        summary = "API EPAY cho nút đặt hàng",
+        summary = "API EPAY for Order button",
         description = """
-        Thông tin test thanh toán Epay
-        Ngân hàng      : NAPAS-SaigonBank
-        Số thẻ         : 9704000000000018
+        ================== Testing card list ==================
+
+        1. ATM with card number
+        --------------------------------------------------
+        Bank           : NAPAS - SaigonBank
+        Card number    : 9704 0000 0000 0018
         Tên chủ thẻ    : NGUYEN VAN A
         Ngày phát hành : 03/07
-        OTP  : otp
-        """
+        OTP/CVV        : otp
+
+        2. ATM with Account number
+        --------------------------------------------------
+        Bank                   : NAPAS - Any Bank
+        Acount number          : 01040001
+        Account name           : NGUYEN VAN A
+        Identity Card/Passport : 01040001
+        OTP/CVV                : otp
+
+        3. Visa/Master/JCB/AMEX
+        --------------------------------------------------
+        ▸ VISA
+        - 445653 00 0000 1005
+        - 400000 00 0000 1000
+        - 400000 00 0000 2701
+        Name           : NGUYEN VAN A
+        Expired        : 11/28
+        CVV            : 123
+        3DS Password   : 1234
+
+        ▸ MASTER CARD
+        - 520000 00 0000 1005
+        - 520000 00 0000 2235
+        Name           : NGUYEN VAN A
+        Expired        : 11/28
+        CVV            : 123
+        3DS Password   : 1234
+
+        ▸ JCB
+        - 333700 00 0000 0008
+        - 3550 9986 5013 1033
+        - 333800 00 0000 0296
+        Name           : NGUYEN VAN A
+        Expired        : 11/28
+        CVV            : 123
+        3DS Password   : 1234
+
+        ▸ AMERICAN EXPRESS (AMEX)
+        - 340000 00 0001 007
+        - 340000 00 0002 708
+        Name           : NGUYEN VAN A
+        Expired        : 11/28
+        CVV            : 123
+        3DS Password   : 1234
+        ====================================================================
+    """
     )
     @PostMapping("/createOrder")
     fun createOrder(

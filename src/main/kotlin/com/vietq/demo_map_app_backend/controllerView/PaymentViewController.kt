@@ -14,9 +14,9 @@ class PaymentViewController(
 ) {
 
     // FOR TESTING CANCEL
-    @GetMapping("/cancel")
+    @GetMapping("/view/orders")
     fun cancel(): String {
-        return "cancel-order"
+        return "orders"
     }
 
     // FOR EPAY CALLBACK
@@ -32,10 +32,8 @@ class PaymentViewController(
         model.addAttribute("invoiceNo", dto.invoiceNo)
         model.addAttribute("amount", dto.amount)
 
-        // For all cases ( IPN will be in charge Success case)
-        if (listOf(dto.invoiceNo, dto.status, dto.merTrxId, dto.trxId).all { it.isNotBlank() }) {
-            paymentService.callbackUrl(dto)
-        }
+        // For all cases
+        paymentService.callbackUrl(dto)
 
         return "result-payment"
     }

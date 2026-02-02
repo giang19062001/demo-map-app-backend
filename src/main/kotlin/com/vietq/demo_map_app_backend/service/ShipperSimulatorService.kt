@@ -39,6 +39,12 @@ class ShipperSimulatorService(
         var currentRouterIndex: Int = 0
     )
 
+    private data class JoinRoomRequest @JsonCreator constructor(
+        @JsonProperty("orderId") val orderId: Long,
+        @JsonProperty("lat") val lat: Double,
+        @JsonProperty("lon") val lon: Double
+    )
+
     private companion object {
         const val SPEED_PER_TICK = 50.0 // meters
         const val ARRIVAL_THRESHOLD = 50.0 // meters
@@ -47,14 +53,8 @@ class ShipperSimulatorService(
         const val ROOM_PREFIX = "tracking_room_"
     }
 
-    private data class JoinRoomRequest @JsonCreator constructor(
-        @JsonProperty("orderId") val orderId: Long,
-        @JsonProperty("lat") val lat: Double,
-        @JsonProperty("lon") val lon: Double
-    )
-
-    private val executor = Executors.newSingleThreadScheduledExecutor()
     private val log = LoggerFactory.getLogger(ShipperSimulatorService::class.java)
+    private val executor = Executors.newSingleThreadScheduledExecutor()
     private val activeSimulations = ConcurrentHashMap<Long, SimulationContext>()
     private fun getRoomName(orderId: Long) = "$ROOM_PREFIX$orderId"
 

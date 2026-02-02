@@ -1,14 +1,17 @@
 package com.vietq.demo_map_app_backend.repository
 
+import PaymentEpayResponseDto
 import UpsertPaymentDto
 import org.jooq.DSLContext
 import org.springframework.stereotype.Repository
 import com.study.jooq.tables.OrderPaymentEpay.Companion.ORDER_PAYMENT_EPAY
+import com.vietq.demo_map_app_backend.mapper.PaymentMapper
 import org.aspectj.apache.bcel.generic.RET
 
 @Repository
 class PaymentRepository(
-    private val dsl: DSLContext
+    private val dsl: DSLContext,
+    private val paymentMapper: PaymentMapper
 ) {
 
     fun upsertPayment(dto: UpsertPaymentDto): Int {
@@ -58,12 +61,13 @@ class PaymentRepository(
         return affected
     }
 
-
-    fun updatePayment(orderCode: String, trxId: String): Int {
-        return dsl.update(ORDER_PAYMENT_EPAY)
-            .set(ORDER_PAYMENT_EPAY.TRXID, trxId)
+    fun getPaymentByOrderCode(orderCode: String): PaymentEpayResponseDto? {
+        return dsl
+            .selectFrom(ORDER_PAYMENT_EPAY)
             .where(ORDER_PAYMENT_EPAY.ORDERCODE.eq(orderCode))
-            .execute()
+            .fetchOne { r ->
+                paymentMapper.toPaymentResponseDto(r)
+            } ?: return null
     }
 
 }
