@@ -26,13 +26,13 @@ class PaymentViewController(
         model: Model
     ): String {
 
-        // For view
+        // For 'html'
         model.addAttribute("resultCd", dto.resultCd)
         model.addAttribute("resultMsg", dto.resultMsg)
         model.addAttribute("invoiceNo", dto.invoiceNo)
         model.addAttribute("amount", dto.amount)
 
-        // For all cases
+        // Checking
         paymentService.callbackUrl(dto)
 
         return "result-payment"

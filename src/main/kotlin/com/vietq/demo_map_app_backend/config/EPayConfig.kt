@@ -6,11 +6,11 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 class EpayConfig {
 
-    @Value("\${epay.sandbox:true}")
-    val sandbox: Boolean = true
-
     @Value("\${epay.merId}")
     lateinit var merId: String
+
+    @Value("\${epay.cancelPw}")
+    lateinit var cancelPw: String
 
     @Value("\${epay.callBackUrl}")
     lateinit var callBackUrl: String
@@ -27,10 +27,15 @@ class EpayConfig {
     @Value("\${epay.createLinkUrl}")
     lateinit var createLinkUrl: String
 
-    @Value("\${epay.inquiryStatus}")
-    lateinit var inquiryStatus: String
+    @Value("\${epay.inquiryStatusUrl}")
+    lateinit var inquiryStatusUrl: String
 
-    @Value("\${epay.inquiryNoStatus}")
-    lateinit var inquiryNoStatus: String
+    @Value("\${epay.inquiryNoStatusUrl}")
+    lateinit var inquiryNoStatusUrl: String
+
+    @Value("\${epay.cancelUrl}")
+    lateinit var cancelUrl: String
+
+
 
 }

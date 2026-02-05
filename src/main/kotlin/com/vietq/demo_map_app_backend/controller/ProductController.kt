@@ -18,14 +18,10 @@ class ProductController(
 ) {
 
 
-    @Operation(
-        summary = "Get product list by category",
-    )
+    @Operation(summary = "Get product list by category",)
     @GetMapping("/getProducts")
     fun getNearbyMarts(
-        @Parameter(
-            description = "ID of category: 0 is get product list by all categories, category ID > 0 is filtering product by specific category",
-        )
+        @Parameter(description = "ID of category: 0 is get product list by all categories, category ID > 0 is filtering product by specific category")
         @RequestParam(defaultValue = "0") categoryId: Long
     ): List<ProductResponseDto> {
         return productService.getProducts(categoryId)

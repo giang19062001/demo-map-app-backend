@@ -15,9 +15,7 @@ class MartController(
     private val martService: MartService
 ) {
 
-    @Operation(
-        summary = "Get list of Mars nearby User location",
-    )
+    @Operation(summary = "Get list of Mars nearby User location")
     @GetMapping("/nearby")
     fun getNearbyMarts(@ParameterObject dto : MartRequestDto): List<MartResponseDto> {
         return martService.getNearestMarts(dto)

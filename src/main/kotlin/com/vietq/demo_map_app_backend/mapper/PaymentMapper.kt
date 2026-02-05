@@ -1,39 +1,39 @@
 package com.vietq.demo_map_app_backend.mapper
 
 import PaymentCallbackDto
-import PaymentCheckTransactionDataResponseDto
-import PaymentCreateLinkResponseDto
-import PaymentEpayResponseDto
 import UpsertPaymentDto
-import com.study.jooq.enums.OrderPaymentEpayPaytype
+import com.study.jooq.enums.OrderEpayPaytype
 import com.vietq.demo_map_app_backend.dto.CreateOrderResponseDto
 import org.springframework.stereotype.Component
 import org.jooq.Record
-import com.study.jooq.tables.OrderPaymentEpay.Companion.ORDER_PAYMENT_EPAY
+import com.study.jooq.tables.OrderEpay.Companion.ORDER_EPAY
+import com.vietq.demo_map_app_backend.dto.PaymentCreateLinkResponseDto
+import com.vietq.demo_map_app_backend.dto.PaymentEpayResponseDto
+import com.vietq.demo_map_app_backend.dto.PaymentGetTransactionDataResponseDto
 
 @Component
 class PaymentMapper {
 
     fun toPaymentResponseDto(r: Record): PaymentEpayResponseDto =
         PaymentEpayResponseDto(
-            orderCode = r[ORDER_PAYMENT_EPAY.ORDERCODE]!!,
-            trxId = r[ORDER_PAYMENT_EPAY.TRXID],
-            merTrxId = r[ORDER_PAYMENT_EPAY.MERTRXID],
-            goodsNm =r[ORDER_PAYMENT_EPAY.GOODSNM],
-            buyerFirstNm =r[ORDER_PAYMENT_EPAY.BUYERFIRSTNM],
-            buyerLastNm = r[ORDER_PAYMENT_EPAY.BUYERLASTNM],
-            amount = r[ORDER_PAYMENT_EPAY.AMOUNT],
-            remainAmount = r[ORDER_PAYMENT_EPAY.REMAINAMOUNT],
-            payType = r[ORDER_PAYMENT_EPAY.PAYTYPE],
-            payOption =r[ORDER_PAYMENT_EPAY.PAYOPTION],
-            bankId =r[ORDER_PAYMENT_EPAY.BANKID],
-            bankCode = r[ORDER_PAYMENT_EPAY.BANKCODE],
-            cardNo = r[ORDER_PAYMENT_EPAY.CARDNO],
-            cardType = r[ORDER_PAYMENT_EPAY.CARDTYPE],
-            cardTypeValue = r[ORDER_PAYMENT_EPAY.CARDTYPEVALUE],
-            status = r[ORDER_PAYMENT_EPAY.STATUS],
-            resultCd = r[ORDER_PAYMENT_EPAY.RESULTCD]!!,
-            resultMsg =r[ORDER_PAYMENT_EPAY.RESULTMSG]!!
+            orderCode = r[ORDER_EPAY.ORDERCODE]!!,
+            trxId = r[ORDER_EPAY.TRXID],
+            merTrxId = r[ORDER_EPAY.MERTRXID],
+            goodsNm =r[ORDER_EPAY.GOODSNM],
+            buyerFirstNm =r[ORDER_EPAY.BUYERFIRSTNM],
+            buyerLastNm = r[ORDER_EPAY.BUYERLASTNM],
+            amount = r[ORDER_EPAY.AMOUNT],
+            remainAmount = r[ORDER_EPAY.REMAINAMOUNT],
+            payType = r[ORDER_EPAY.PAYTYPE],
+            payOption =r[ORDER_EPAY.PAYOPTION],
+            bankId =r[ORDER_EPAY.BANKID],
+            bankCode = r[ORDER_EPAY.BANKCODE],
+            cardNo = r[ORDER_EPAY.CARDNO],
+            cardType = r[ORDER_EPAY.CARDTYPE],
+            cardTypeValue = r[ORDER_EPAY.CARDTYPEVALUE],
+            status = r[ORDER_EPAY.STATUS],
+            resultCd = r[ORDER_EPAY.RESULTCD]!!,
+            resultMsg =r[ORDER_EPAY.RESULTMSG]!!
         )
 
     fun toCreateLinkResponse(
@@ -71,7 +71,7 @@ class PaymentMapper {
             buyerLastNm = dto.buyerLastNm,
             amount = dto.amount,
             remainAmount = dto.remainAmount ?: dto.amount,
-            payType = dto.payType.let { OrderPaymentEpayPaytype.valueOf(it) },
+            payType = dto.payType.let { OrderEpayPaytype.valueOf(it) },
             payOption = dto.payOption,
             bankId = dto.bankId,
             bankCode = dto.bankCode,
@@ -85,7 +85,7 @@ class PaymentMapper {
     }
 
     fun toUpsertPaymentDto(
-        dto: PaymentCheckTransactionDataResponseDto,
+        dto: PaymentGetTransactionDataResponseDto,
     ): UpsertPaymentDto {
         return UpsertPaymentDto(
             orderCode = dto.invoiceNo,
@@ -96,7 +96,7 @@ class PaymentMapper {
             buyerLastNm = dto.buyerLastNm,
             amount = dto.amount,
             remainAmount = dto.remainAmount ?: dto.amount,
-            payType = dto.payType.let { OrderPaymentEpayPaytype.valueOf(it) },
+            payType = dto.payType.let { OrderEpayPaytype.valueOf(it) },
             payOption = dto.payOption,
             bankId = dto.bankId,
             bankCode = dto.bankCode,

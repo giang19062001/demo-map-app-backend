@@ -20,7 +20,7 @@
         }
 
         .container {
-            max-width: 90vw;
+            max-width: 95vw;
             margin: 0 auto;
         }
 
@@ -29,7 +29,7 @@
             background: white;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            overflow: hidden;
+            overflow: scroll;
             margin-bottom: 30px;
         }
 
@@ -70,7 +70,7 @@
 
         /* Button styles */
         .btn {
-            padding: 8px 16px;
+            padding: 5px;
             border-radius: 6px;
             border: none;
             font-weight: 500;
@@ -79,6 +79,7 @@
             font-size: 0.875rem;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
         }
 
@@ -106,14 +107,14 @@
 
         .btn-cancel-each {
             font-size: 17px;
-            background-color: transparent;
-            color: #e0841a;
-            border: 1px solid #e0841a;
+            background-color: #ff8800;
+            color: white;
         }
 
         .btn-cancel-each:hover {
-            background-color: #ff8b07;
-            color: white;
+            background-color: #ff8800;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(255, 149, 10, 0.322);
         }
 
         .btn-sm {
@@ -123,6 +124,7 @@
 
         .btn-group {
             display: flex;
+            flex-direction: column;
             gap: 8px;
         }
 
@@ -312,18 +314,23 @@
         }
 
         /* Status and labels */
-        .order-id {
-            font-weight: 600;
-            color: #1e293b;
+        .field-normal.center {
+            text-align: center;
+        }
+
+        .field-normal.msg {
+            width: 300px;
         }
 
         .field-normal {
             color: #475569;
         }
+
         .field-normal.success {
             color: #19722c;
             font-weight: 500;
         }
+
         .field-normal.fail {
             color: #ad3621;
             font-weight: 500;
@@ -366,15 +373,46 @@
             margin-left: 8px;
         }
 
-        /* Loading state */
-        .loading {
-            opacity: 0.7;
-            pointer-events: none;
+        #loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(1px);
+            -webkit-backdrop-filter: blur(1px);
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            z-index: 9999;
+        }
+
+        .loader {
+            width: 48px;
+            height: 48px;
+            border: 5px solid #fff;
+            border-bottom-color: transparent;
+            border-radius: 50%;
+            animation: rotation 1s linear infinite;
+        }
+
+        @keyframes rotation {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
     </style>
 </head>
 
 <body>
+    <div id="loading-overlay">
+        <span class="loader"></span>
+    </div>
+
     <div class="container">
         <div class="header-bar">
             <h2 class="page-title">List of Orders</h2>
@@ -393,13 +431,16 @@
             <table id="orderTable">
                 <thead>
                     <tr>
-                        <th>Order ID</th>
-                        <th>Customer</th>
-                        <th>Order Payment status</th>
-                        <th>Epay status</th>
-                        <th>Epay message</th>
-                        <th>Amount</th>
-                        <th>Actions</th>
+                        <th style="text-align: center;">Customer</th>
+                        <th>Code</th>
+                        <th style="text-align: center;">Amount</th>
+                        <th style="text-align: center;">Remain Amount</th>
+                        <th style="text-align: center;">Order Payment</th>
+                        <th style="text-align: center;">Refund Payment</th>
+                        <th style="text-align: center;">Epay code/status/message</th>
+                        <th>Epay infomation</th>
+                        <th>Fee Description</th>
+                        <th style="text-align: center;">Actions</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -410,7 +451,11 @@
         <div class="modal" id="cancelModal">
             <div class="modal-content">
                 <h4>Cancel Item</h4>
-                <p style="margin-bottom: 15px; color: #64748b;">Enter the quantity you want to cancel for this item.</p>
+                <input type="hidden" id="name">
+                <input type="hidden" id="image">
+                <input type="hidden" id="price">
+                <input type="hidden" id="categoryId">
+                <input type="hidden" id="categoryName">
                 <input type="hidden" id="currentQty">
                 <input type="number" id="cancelQty" placeholder="Enter quantity" min="1">
                 <div class="modal-actions">
@@ -423,17 +468,29 @@
 
     <script>
         const host = window.location.origin;
+        // const host = "http://localhost:8502";
         let currentOrderCode = null;
         let currentItemId = null;
         let userList = [];
         let orderList = [];
+
+        function showLoading() {
+            document.getElementById('loading-overlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
+
 
         document.addEventListener("DOMContentLoaded", () => {
             loadUsers();
         });
 
 
-        function loadUsers() {
+        async function loadUsers() {
+            showLoading();
+
             fetch(host + "/api/user/getUsers")
                 .then(res => res.json())
                 .then(data => {
@@ -446,17 +503,20 @@
                         select.value = data[0].id;
                         loadOrders(data[0].id);
                     }
-                });
+                }).finally(() => hideLoading());
+
         }
 
-        function loadOrders(userId) {
+        async function loadOrders(userId) {
+            showLoading();
+
             const userSelected = document.getElementById("userSelect").value
             fetch(`${host}/api/admin/order/getOrders?userId=${userId ?? userSelected}`)
                 .then(res => res.json())
                 .then(data => {
                     orderList = data;
                     renderOrders(data);
-                });
+                }).finally(() => hideLoading());
         }
 
         function renderUserSelect(users) {
@@ -479,19 +539,39 @@
                 const tr = document.createElement("tr");
                 const isSuccess = order.paymentStatus == "PAYMENT_SUCCESS" || order.resultCd == "00_000"
                 const isFail = order.paymentStatus == "PAYMENT_FAIL" || (String(order.resultCd).trim() !== "" && order.resultCd != "00_000")
-                tr.innerHTML = `
-                    <td><span class="order-id">${order.orderCode}</span></td>
-                    <td class="field-normal">${order.ordererName}</td>
-                    <td class="field-normal ${isSuccess ? "success" : ""}  ${isFail ? "fail" : ""}">${order.paymentStatus}</td>
-                    <td class="field-normal">${order.resultCd}</td>
-                    <td class="field-normal ${isSuccess ? "success" : ""}  ${isFail ? "fail" : ""}">${order.resultMsg}</td>
-                    <td class="field-normal">${order.amount}</td>
+                const isRefund = order.status == "2" && order.remainAmount == "0"
 
-                    <td>
-                        ${isSuccess
+                tr.innerHTML = `
+                    <td class="field-normal center">${order.ordererName}</td>
+                    <td class="field-normal">
+                        <p>orderId: <b>${order.id}</b></p>
+                        <p>orderCode: <b>${order.orderCode}</b></p>
+                        <p>trxId: <b>${order.trxId}</b></p>
+                        <p>merTrxId: <b>${order.merTrxId}</b></p>
+                    </td>
+                    <td class="field-normal center">${order.amount}</td>
+                    <td class="field-normal center">${order.remainAmount}</td>
+                    <td class="field-normal center ${isSuccess ? "success" : ""}  ${isFail ? "fail" : ""}">${order.paymentStatus}</td>
+                    <td class="field-normal center">${order.refundStatus}</td>
+                    <td class="field-normal center ${isSuccess ? "success" : ""}  ${isFail ? "fail" : ""} msg">${order.resultCd ?? '-'} / ${order.status ?? '-'} / ${order.resultMsg ?? '-'}</td>
+                    <td class="field-normal">
+                        <p>Pay Type: ${order.payType ?? '-'}</p>
+                        <p>Bank: ${order.bankId ?? '-'}</p>
+                        <p>Card: ${order.cardNo ?? '-'}</p>
+                    </td>
+                    <td class="field-normal">
+                        <p>Cart Total:  ${order.cartTotal}</p>
+                        <p>Delivery:  +${order.deliveryFee}</p>
+                        <p>Discount:  -${order.discount}</p>
+                        <p>Coupon:  -${order.couponVolume}</p>
+                        <p>Point:  -${order.pointVolume}</p>
+                    </td>
+
+                    <td style="width:11em">
+                        ${isSuccess 
                         ? `<div class="btn-group">
-                            <button class="btn btn-danger" onclick="cancelAll('${order.orderCode}')">Cancel Order</button>
-                            <button class="btn btn-cancel-each" onclick="toggleExpand('${order.orderCode}', this)">Cancel Each Item</button>
+                            ${!isRefund ? `<button class="btn btn-danger" onclick="cancelEntire('${order.orderCode}')">Cancel Entire</button>` :""}
+                            <button class="btn btn-cancel-each" onclick="toggleExpand('${order.orderCode}', this)">Show Items</button>
                         </div>` : ""}
                     </td>
                 `;
@@ -506,37 +586,49 @@
 
 
 
-        function cancelAll(orderCode) {
+        async function cancelEntire(orderCode) {
             if (!confirm("Are you sure you want to cancel this entire order?")) return;
 
-            fetch(`/api/orders/${orderCode}/cancel-all`, { method: "POST" })
-                .then(() => loadOrders());
+            showLoading();
+            fetch(`${host}/api/admin/order/cancelEntireOrder/${orderCode}`, { method: "PUT" })
+                .then(() => loadOrders()).finally(() => hideLoading());
         }
 
-        function toggleExpand(orderCode, btn) {
+        async function toggleExpand(orderCode, btn) {
             const tr = btn.closest("tr");
 
             // close expand
             if (tr.nextSibling && tr.nextSibling.classList.contains("expand-row")) {
                 tr.nextSibling.remove();
-                btn.textContent = "Cancel by Item";
+                btn.textContent = "Show Items";
                 return;
             }
 
-            const order = orderList.find(o => o.orderCode === orderCode);
+            showLoading();
+            const order = await fetch(`${host}/api/admin/order/getOrderByCode/${orderCode}`, {
+                method: "GET"
+                })
+                .then(response => response.json()) 
+                .then(data => { return data; })
+                .finally(() => { hideLoading(); });
+
             if (!order) return;
 
             const expandTr = document.createElement("tr");
             expandTr.className = "expand-row";
             expandTr.innerHTML = `
-                <td colspan="7">
+                <td colspan="10">
                     <div class="flex-container">
                         <div class="box">
-                            <h4>Items in Order</h4>
-                            ${renderItemList(order.cartData, orderCode)}
+                            <h4>Cart Items Original</h4>
+                            ${renderOriginalList(order.cartDataOriginal)}
                         </div>
                         <div class="box">
-                            <h4>Cancelled Items <span class="cancelled-badge">${order.cartDataCancel ? order.cartDataCancel.length : 0}</span></h4>
+                            <h4>Cart Items Current</h4>
+                            ${renderItemList(order.cartDataCurrent, orderCode)}
+                        </div>
+                        <div class="box">
+                            <h4>Cart Items Were Cancelled <span class="cancelled-badge">${order.cartDataCancel ? order.cartDataCancel.length : 0}</span></h4>
                             ${renderCanceledList(order.cartDataCancel)}
                         </div>
                     </div>
@@ -545,6 +637,34 @@
 
             tr.after(expandTr);
             btn.textContent = "Hide Items";
+        }
+
+
+        function renderOriginalList(items) {
+            if (!items || !items.length) return "<div class='empty-message'>Empty list</div>";
+
+            return `
+                <table class="inner-table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Price</th>
+                            <th>Qty</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${items.map(i => `
+                            <tr>
+                                <td>${i.name}</td>
+                                <td>${i.price}</td>
+                                <td>${i.quantity}</td>
+                                <td>${i.quantity * i.price}</td>
+                            </tr>
+                        `).join("")}
+                    </tbody>
+                </table>
+            `;
         }
 
         function renderItemList(items, orderCode) {
@@ -557,6 +677,7 @@
                             <th>Product</th>
                             <th>Price</th>
                             <th>Qty</th>
+                            <th>Total</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -564,10 +685,11 @@
                         ${items.map(i => `
                             <tr>
                                 <td>${i.name}</td>
-                                <td>$${i.price}</td>
+                                <td>${i.price}</td>
                                 <td>${i.quantity}</td>
+                                <td>${i.quantity * i.price}</td>
                                 <td>
-                                    <button class="btn btn-danger btn-sm" onclick="openModal('${orderCode}','${i.id}', '${i.quantity}')">Cancel</button>
+                                    <button class="btn btn-danger btn-sm" onclick="openModal('${orderCode}','${i.id}', '${i.name}','${i.image}', '${i.quantity}', '${i.price}', '${i.categoryId}', '${i.categoryName}')">Cancel</button>
                                 </td>
                             </tr>
                         `).join("")}
@@ -577,7 +699,7 @@
         }
 
         function renderCanceledList(items) {
-            if (!items || !items.length) return "<div class='empty-message'>No items cancelled yet</div>";
+            if (!items || !items.length) return "<div class='empty-message'>Empty list</div>";
 
             return `
                 <table class="inner-table">
@@ -586,14 +708,16 @@
                             <th>Product</th>
                             <th>Price</th>
                             <th>Cancelled Qty</th>
+                            <th>Total</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${items.map(i => `
                             <tr>
                                 <td>${i.name}</td>
-                                <td>$${i.price}</td>
+                                <td>${i.price}</td>
                                 <td>${i.quantity}</td>
+                                <td>${i.quantity * i.price}</td>
                             </tr>
                         `).join("")}
                     </tbody>
@@ -601,9 +725,14 @@
             `;
         }
 
-        function openModal(orderCode, itemId, quantity) {
+        function openModal(orderCode, itemId, name, image, quantity, price, categoryId, categoryName) {
             currentOrderCode = orderCode;
             currentItemId = itemId;
+            document.getElementById("name").value = name;
+            document.getElementById("image").value = image;
+            document.getElementById("price").value = price;
+            document.getElementById("categoryId").value = categoryId;
+            document.getElementById("categoryName").value = categoryName;
             document.getElementById("currentQty").value = quantity;
             document.getElementById("cancelQty").value = "";
             document.getElementById("cancelModal").style.display = "flex";
@@ -613,28 +742,38 @@
             document.getElementById("cancelModal").style.display = "none";
         }
 
-        function submitCancelItem() {
-            const cancelQty = document.getElementById("cancelQty").value;
+        async function submitCancelItem() {
+            const name = document.getElementById("name").value;
+            const image = document.getElementById("image").value;
+            const price = document.getElementById("price").value;
+            const categoryId = document.getElementById("categoryId").value;
+            const categoryName = document.getElementById("categoryName").value;
             const currentQty = document.getElementById("currentQty").value;
+            const cancelQty = document.getElementById("cancelQty").value;
 
             if (!cancelQty || cancelQty <= 0) {
                 alert("Please enter a valid quantity");
                 return;
             }
 
-             if (cancelQty > currentQty) {
+            if (cancelQty > currentQty) {
                 alert("Cancellations cannot exceed the available quantity");
                 return;
             }
 
-            fetch(`/api/orders/${currentOrderCode}/items/${currentItemId}/cancel`, {
-                method: "POST",
+            showLoading();
+
+            fetch(`${host}/api/admin/order/cancelPartialOrder/${currentOrderCode}`, {
+                method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ quantity: cancelQty })
+                body: JSON.stringify({
+                    productId: Number(currentItemId), quantity: Number(cancelQty), price: Number(price),
+                    name: name, image: image, categoryId: Number(categoryId), categoryName: categoryName
+                })
             }).then(() => {
                 closeModal();
                 loadOrders();
-            });
+            }).finally(() => hideLoading());
         }
 
         // Close modal when clicking outside

@@ -14,9 +14,7 @@ class CategoryController (
     private val categoryService: CategoryService
 
 ){
-    @Operation(
-        summary = "Get category list",
-    )
+    @Operation(summary = "Get category list",)
     @GetMapping("/getCategories")
     fun getCategories(): List<CateResponseDto> {
         return categoryService.getCategories()

@@ -13,9 +13,7 @@ import org.springframework.web.bind.annotation.RestController
 class BannerController (
     private val bannerService: BannerService
 ){
-    @Operation(
-        summary = "Get banner list",
-    )
+    @Operation(summary = "Get banner list",)
     @GetMapping("/getBanners")
     fun getBanners(): List<BannerResponseDto> {
         return bannerService.getBanners()

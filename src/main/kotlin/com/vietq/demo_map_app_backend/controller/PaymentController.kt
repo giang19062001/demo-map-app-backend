@@ -18,14 +18,13 @@ import com.vietq.demo_map_app_backend.utils.toSuccessResponse
 import jakarta.validation.Valid
 import org.apache.coyote.BadRequestException
 import org.springframework.web.bind.annotation.PathVariable
-import java.math.BigDecimal
 import java.util.*
 
 @RestController
 @RequestMapping("/api/payment")
 class PaymentController(private val paymentService: PaymentService) {
     @Operation(
-        summary = "API EPAY for Order button",
+        summary = "API EPAY for creating Link and QRcode",
         description = """
         ================== Testing card list ==================
 
@@ -84,13 +83,8 @@ class PaymentController(private val paymentService: PaymentService) {
     """
     )
     @PostMapping("/createOrder")
-    fun createOrder(
-        @Valid @RequestBody dto: CreateOrderDto,
-        httpRequest: HttpServletRequest
-    ): ResponseEntity<SuccessResponse<CreateOrderResponseDto>> {
-
+    fun createOrder(@Valid @RequestBody dto: CreateOrderDto, httpRequest: HttpServletRequest): ResponseEntity<SuccessResponse<CreateOrderResponseDto>> {
         val clientIp = httpRequest.remoteAddr
-
         val orderResponse = paymentService.createOrder(dto, clientIp)
         return ResponseEntity.ok(orderResponse.toSuccessResponse("Create order successfully"))
     }
@@ -102,23 +96,16 @@ class PaymentController(private val paymentService: PaymentService) {
         """
     )
     @GetMapping("/checkPayment/{invoiceNo}")
-    fun checkPayment(
-        @PathVariable invoiceNo: String
-    ): ResponseEntity<SuccessResponse<OrderPaymentstatus>> {
-
+    fun checkPayment(@PathVariable invoiceNo: String): ResponseEntity<SuccessResponse<OrderPaymentstatus>> {
         val (paymentStatus, msg) = paymentService.checkPayment(invoiceNo)
-
         return ResponseEntity.ok(
             paymentStatus.toSuccessResponse(msg)
         )
     }
 
-    // EPAY ONLY CALL THIS API WHEN THE PAYMENT SUCCESS ( NOT CALL THIS API IF THE PAYMENT FAILED)
     @Operation(summary = "API for EPAY callback")
     @PostMapping("/ipnNotiUrl")
-    fun callbackIpn(
-        @RequestBody body: PaymentCallbackDto
-    ): ResponseEntity<Void> {
+    fun callbackIpn(@RequestBody body: PaymentCallbackDto): ResponseEntity<Void> {
         paymentService.callbackIpn(body)
         return ResponseEntity.ok().build()
     }

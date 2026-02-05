@@ -13,9 +13,7 @@ import org.springframework.web.bind.annotation.RestController
 class UserController (
     private val userService: UserService
 ){
-    @Operation(
-        summary = "Get user list",
-    )
+    @Operation(summary = "Get user list",)
     @GetMapping("/getUsers")
     fun getUsers(): List<UserResponseDto> {
         return userService.getUsers()

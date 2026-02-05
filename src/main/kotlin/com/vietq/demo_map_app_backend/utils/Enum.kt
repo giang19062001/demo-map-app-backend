@@ -1,6 +1,5 @@
 package com.vietq.demo_map_app_backend.utils
 import com.study.jooq.enums.OrderPaymentstatus
-import com.vietq.demo_map_app_backend.utils.EpayTransactionResultCodeEnum.SUCCESS
 
 enum class EpayMerchantCodeEnum(val code: String, val description: String, ) {
     MERCHANT_FAIL("-1", "Transaction not exists"),
@@ -334,12 +333,16 @@ enum class EpayTransactionStatuEnum(val code: String, val description: String) {
     companion object {
 
         fun fromCode(code: String?): EpayTransactionStatuEnum {
-            return EpayTransactionStatuEnum.entries.find { it.code == code } ?: EpayTransactionStatuEnum.UNKNOWN
+            return entries.find { it.code == code } ?: UNKNOWN
         }
 
         fun isSuccess(code: String?): Boolean {
-            val value = code?.toIntOrNull() ?: return false
-            return value >= 0
+            val result = fromCode(code)
+            return result == SUCCESS_NOT_REFUND
+        }
+        fun isRefund(code: String?): Boolean {
+            val result = fromCode(code)
+            return result == SUCCESS_ALREADY_REFUND
         }
     }
 }

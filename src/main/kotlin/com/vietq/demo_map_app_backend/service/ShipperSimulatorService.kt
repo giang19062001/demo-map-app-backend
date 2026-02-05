@@ -20,7 +20,7 @@ class ShipperSimulatorService(
     private val socket: SocketIOServer,
     private val martService: MartService
 ) {
-
+    private  val logbase = "ShipperSimulatorService"
     private data class ShipperResponseDto(
         val orderId: Long,
         val lat: Double,
@@ -77,16 +77,14 @@ class ShipperSimulatorService(
             val url = handshake.url
             val origin = handshake.getHttpHeaders()["Origin"]
             val params = handshake.urlParams
-            log.info(
-                "Socket connected | sessionId={} | url={} | origin={} | params={}",
-                client.sessionId, url, origin, params
-            )
+            log.info("logbase={} ---socket.addConnectListener: sessionId={} | url={} | origin={} | params={}", logbase, client.sessionId, url, origin, params)
         }
     }
 
     @PreDestroy
     fun shutdown() {
-        log.info("Shutting down shipper simulator service")
+        log.info("logbase={} ---shutdown: shutdown shipper simulator service.", logbase)
+
         activeSimulations.values.forEach { it.future.cancel(false) }
         activeSimulations.clear()
 
@@ -105,25 +103,22 @@ class ShipperSimulatorService(
         val martInfoOnOrder = martService.getMartLocationFromOrder(request.orderId)
 
         if (martInfoOnOrder == null) {
-            log.warn("Order {} not found, client cannot join room", request.orderId)
+            log.info("logbase={} ---handleJoinRoom: Order {} not found, client cannot join room", logbase,  request.orderId)
             return
         }
 
         client.joinRoom(roomName)
-        log.info("Client {} joined room {}", client.sessionId, roomName)
+        log.info("logbase={} ---handleJoinRoom: Client {} joined room {}", logbase,  client.sessionId, roomName)
 
         if (activeSimulations.containsKey(request.orderId)) {
-            log.info("Simulation already running for order {}", request.orderId)
+            log.info("logbase={} ---handleJoinRoom: Simulation already running for order {}", logbase,  request.orderId)
             return
         }
 
         // hardcode
         val routersSimulator = routersSimulatorDefault
-
-        log.info(
-            "Starting simulation for order {} from ({}, {}) to ({}, {}) with {} router points",
-            request.orderId, martInfoOnOrder.lat, martInfoOnOrder.lon, request.lat, request.lon, routersSimulator.size
-        )
+        log.info("logbase={} ---handleJoinRoom: Starting simulation for order {} from ({}, {}) to ({}, {}) with {} router points",
+            logbase, request.orderId, martInfoOnOrder.lat, martInfoOnOrder.lon, request.lat, request.lon, routersSimulator.size)
 
         startSimulation(
             orderId = request.orderId,
@@ -138,16 +133,16 @@ class ShipperSimulatorService(
     private fun handleLeaveRoom(client: com.corundumstudio.socketio.SocketIOClient, orderId: Long) {
         val roomName = getRoomName(orderId)
         client.leaveRoom(roomName)
-        log.info("Client {} left room {}", client.sessionId, roomName)
+        log.info("logbase={} ---handleLeaveRoom: Client {} left room {}", logbase, client.sessionId, roomName)
 
         if (socket.getRoomOperations(roomName).clients.isEmpty()) {
-            log.info("No more clients in room {}, stopping simulation", roomName)
+            log.info("logbase={} ---handleLeaveRoom: No more clients in room {}, stopping simulation", logbase, roomName)
             stopSimulation(orderId)
         }
     }
 
     private fun handleDisconnect(client: com.corundumstudio.socketio.SocketIOClient) {
-        log.info("Client {} disconnected", client.sessionId)
+        log.info("logbase={} ---handleDisconnect: Client {} disconnected", logbase, client.sessionId)
 
         client.allRooms
             .filter { it.startsWith(ROOM_PREFIX) }
@@ -155,33 +150,26 @@ class ShipperSimulatorService(
                 val orderId = roomName.removePrefix(ROOM_PREFIX).toLongOrNull()
                 orderId?.let {
                     if (socket.getRoomOperations(roomName).clients.isEmpty()) {
-                        log.info("Room {} empty after disconnect, stopping simulation", roomName)
+                        log.info("logbase={} ---handleDisconnect: Room {} empty after disconnect, stopping simulation", logbase, roomName)
                         stopSimulation(it)
                     }
                 }
             }
     }
 
-    private fun startSimulation(
-        orderId: Long,
-        startLat: Double,
-        startLon: Double,
-        targetLat: Double,
-        targetLon: Double,
-        routersSimulator: List<LatLngRouter>
-    ) {
+    private fun startSimulation(orderId: Long, startLat: Double, startLon: Double, targetLat: Double, targetLon: Double, routersSimulator: List<LatLngRouter>) {
         val roomName = getRoomName(orderId)
 
         val future = executor.scheduleAtFixedRate({
             try {
                 val context = activeSimulations[orderId] ?: run {
-                    log.warn("Context not found for order {}, stopping simulation", orderId)
+                    log.info("logbase={} ---startSimulation: Context not found for order {}, stopping simulation", logbase, orderId)
                     stopSimulation(orderId)
                     return@scheduleAtFixedRate
                 }
 
                 if (socket.getRoomOperations(roomName).clients.isEmpty()) {
-                    log.info("No clients in room {}, stopping simulation", roomName)
+                    log.info("logbase={} ---startSimulation: No clients in room {}, stopping simulation", logbase, roomName)
                     stopSimulation(orderId)
                     return@scheduleAtFixedRate
                 }
@@ -195,7 +183,7 @@ class ShipperSimulatorService(
 
                 updateLocation(context, targetLat, targetLon, distance, orderId, roomName)
             } catch (e: Exception) {
-                log.error("Error in simulation for order {}", orderId, e)
+                log.error("logbase={} ---startSimulation: Error in simulation for order {}", logbase,  orderId, e)
             }
         }, 0, UPDATE_INTERVAL, TimeUnit.SECONDS)
 
@@ -213,7 +201,7 @@ class ShipperSimulatorService(
     }
 
     private fun handleArrival(orderId: Long, roomName: String, lat: Double, lon: Double, distance: Double) {
-        log.info("Simulation completed for order {}, distance={}m", orderId, distance)
+        log.info("logbase={} ---startSimulation: Simulation completed for order {}, distance={}m", logbase, orderId, distance)
 
         val response = ShipperResponseDto(orderId, lat, lon, distance.toInt(), true)
         socket.getRoomOperations(roomName).sendEvent("shipper_location", response)
@@ -221,14 +209,7 @@ class ShipperSimulatorService(
         stopSimulation(orderId)
     }
 
-    private fun updateLocation(
-        context: SimulationContext,
-        targetLat: Double,
-        targetLon: Double,
-        distance: Double,
-        orderId: Long,
-        roomName: String
-    ) {
+    private fun updateLocation(context: SimulationContext, targetLat: Double, targetLon: Double, distance: Double, orderId: Long, roomName: String) {
         val routers = context.routersSimulator
 
         // Next index
@@ -258,25 +239,14 @@ class ShipperSimulatorService(
 
         val response = ShipperResponseDto(orderId, newLat, newLon, distance.toInt(), false)
 
-        log.debug(
-            "Order {} | lat={}, lon={}, remain={}m | routerIndex={}/{}",
-            orderId,
-            newLat,
-            newLon,
-            distance.toInt(),
-            context.currentRouterIndex,
-            routers.size
-        )
+
+        log.info("logbase={} ---updateLocation: Order {} | lat={}, lon={}, remain={}m | routerIndex={}/{}",
+            logbase,  orderId, newLat, newLon, distance.toInt(), context.currentRouterIndex, routers.size)
 
         socket.getRoomOperations(roomName).sendEvent("shipper_location", response)
     }
 
-    private fun calculateNextPosition(
-        currentLat: Double,
-        currentLon: Double,
-        targetLat: Double,
-        targetLon: Double
-    ): Pair<Double, Double> {
+    private fun calculateNextPosition(currentLat: Double, currentLon: Double, targetLat: Double, targetLon: Double): Pair<Double, Double> {
         val distance = haversineMeters(currentLat, currentLon, targetLat, targetLon)
 
         if (distance <= SPEED_PER_TICK) {
@@ -293,7 +263,8 @@ class ShipperSimulatorService(
     private fun stopSimulation(orderId: Long) {
         activeSimulations.remove(orderId)?.let { context ->
             context.future.cancel(false)
-            log.info("Stopped simulation for order {}", orderId)
+            log.info("logbase={} ---stopSimulation: Stopped simulation for order {}", logbase, orderId)
+
         }
     }
 

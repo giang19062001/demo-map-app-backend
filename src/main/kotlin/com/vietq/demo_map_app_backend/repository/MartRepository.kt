@@ -40,14 +40,7 @@ class MartRepository(
                 )
             }
     }
-    fun findNearestMarts(
-        lat: Double,
-        lon: Double,
-        radiusKm: Double,
-        limit: Int
-    ): List<MartResponseDto> {
-
-        // công thức tính distance
+    fun findNearestMarts(lat: Double, lon: Double, radiusKm: Double, limit: Int): List<MartResponseDto> {
         val distanceField = DSL.field(
             """
             6371 * acos(
