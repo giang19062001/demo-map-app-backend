@@ -70,19 +70,15 @@ val activeProfile = System.getProperty("spring.profiles.active")
 
 // get local.properties
 val isProduction = activeProfile.contains("prod")
-
 val localProperties = Properties()
 val localPropertiesFile = rootProject.file("local.properties")
-
 if (localPropertiesFile.exists()) {
     localPropertiesFile.inputStream().use {
         localProperties.load(it)
     }
 }
 
-fun localProp(key: String): String =
-    localProperties.getProperty(key)
-        ?: throw GradleException("Missing '$key' in local.properties")
+fun localProp(key: String): String = localProperties.getProperty(key) ?: throw GradleException("Missing '$key' in local.properties")
 
 // JOOQ GENERATE MODEL
 jooq {
@@ -147,7 +143,7 @@ tasks.named("generateJooq") {
 // Disable JOOQ generation in Prod
 
 
-// add generated source into sourceSets
+// config path of generated source for generate Record Class
 sourceSets {
     main {
         java {
@@ -155,7 +151,7 @@ sourceSets {
         }
     }
 }
-// add generated source into sourceSets
+// config  path of generated source for generate Record Class
 
 
 kotlin {

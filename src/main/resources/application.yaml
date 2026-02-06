@@ -1,0 +1,84 @@
+spring:
+  application:
+    name: demo-map-app-backend
+  profiles:
+    active: 'local'
+  config:
+    import: "optional:file:${spring.profiles.active}.properties"
+    timezone: Asia/Ho_Chi_Minh
+
+  # database
+  datasource:
+    url: "${db.url}&serverTimezone=${spring.config.timezone}"
+    username: "${db.user}"
+    password: "${db.password}"
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+
+  jooq:
+    sql-dialect: MYSQL
+
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        validator:
+          apply_to_ddl: true
+
+  # thymeleaf
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    cache: false
+
+  # file
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 50MB
+      enabled: true
+file:
+  upload-dir: ./uploads
+  mvc:
+    static-path-pattern: /uploads/**
+  web:
+    resources:
+      cache:
+        period: 3600
+
+# Swagger/OpenAPI
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+
+#port
+server:
+  port: 8502
+  # nginx - trust proxy
+  forward-headers-strategy: framework
+  error:
+    include-message: always
+socket:
+  port: 8503
+
+# log
+logging:
+  level:
+    root: INFO
+    #    org.springframework.web: DEBUG
+    #    org.springframework.http.converter.json: DEBUG
+    #    org.springframework.validation: DEBUG
+    #    logging.level.org.hibernate.SQL: DEBUG
+    logging.level.org.hibernate.type.descriptor.sql: TRACE

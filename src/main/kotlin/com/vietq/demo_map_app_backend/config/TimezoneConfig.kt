@@ -3,7 +3,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.stereotype.Component
 
 @Component
-@ConfigurationProperties(prefix = "spring")
+@ConfigurationProperties(prefix = "spring.config")
 class TimezoneConfig {
     lateinit var timezone: String
 }
