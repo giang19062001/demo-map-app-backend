@@ -16,7 +16,6 @@ build/
 bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
-build.gradle.kts
 !**/src/resources/**/
 ### IntelliJ IDEA ###
 .idea
