@@ -6,7 +6,6 @@ import com.study.jooq.enums.OrderRefundstatus
 import com.vietq.demo_map_app_backend.dto.CartItemDto
 import com.vietq.demo_map_app_backend.dto.OrderDeliveryInfoDto
 import com.vietq.demo_map_app_backend.dto.CreateOrderDto
-import com.vietq.demo_map_app_backend.dto.OrderAdminResponseDto
 import com.vietq.demo_map_app_backend.dto.OrderResponseDto
 import com.vietq.demo_map_app_backend.repository.OrderRepository
 import com.vietq.demo_map_app_backend.utils.EpayMerchantCodeEnum
@@ -33,10 +32,12 @@ class OrderService(
         var finalPaymentStatus = paymentStatus
         var finalResultMsg = resultMsg
 
-        // 'merTrxId' = -1 --> ERROR
+        // 'merTrxId' = -1 --> ERROR (TRANSACTION HAVE NOT PAID YET)
         if (EpayMerchantCodeEnum.isFailed(merTrxId)) {
             finalPaymentStatus = OrderPaymentstatus.NOT_YET
             finalResultMsg = EpayMerchantCodeEnum.MERCHANT_FAIL.description
+
+            // UPDATE PAYMENT STATUS -> WAITING
             orderRepository.changeOrderAndPaymentStatus(invoiceNo, finalPaymentStatus, OrderOrderstatus.WAITING)
             return Triple(finalPaymentStatus, finalResultMsg, false)
         }
@@ -107,10 +108,10 @@ class OrderService(
         return paymentStatus
     }
 
-    fun getOrders(userId: Long): List<OrderResponseDto> {
-        return orderRepository.getOrders(userId)
-    }
-
+    /**
+     * Get order info and re-calculate cart data with items cart was cancelled
+     * @return: OrderResponseDto
+     */
     fun getOrderById(orderId: Long): OrderResponseDto? {
         val order =  orderRepository.getOrderById(orderId)
         return order?.let {
@@ -138,6 +139,11 @@ class OrderService(
             )
         }
     }
+
+    fun getOrders(userId: Long): List<OrderResponseDto> {
+        return orderRepository.getOrders(userId)
+    }
+
 
     fun getOrderByCode(orderCode: String): OrderResponseDto? {
         return orderRepository.getOrderByCode(orderCode)

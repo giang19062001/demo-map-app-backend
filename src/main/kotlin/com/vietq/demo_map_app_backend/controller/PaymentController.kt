@@ -16,9 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import com.vietq.demo_map_app_backend.utils.toSuccessResponse
 import jakarta.validation.Valid
-import org.apache.coyote.BadRequestException
 import org.springframework.web.bind.annotation.PathVariable
-import java.util.*
 
 @RestController
 @RequestMapping("/api/payment")

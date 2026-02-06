@@ -9,7 +9,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.util.MultiValueMap
 
 @Component
-class CallApiComponent(
+class ApiCaller(
     private val restTemplate: RestTemplate
 ) {
     fun <T : Any> postJson(

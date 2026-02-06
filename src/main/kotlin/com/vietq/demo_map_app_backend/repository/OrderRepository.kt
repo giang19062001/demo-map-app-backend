@@ -2,7 +2,6 @@ package com.vietq.demo_map_app_backend.repository
 
 import com.study.jooq.enums.OrderOrderstatus
 import com.study.jooq.enums.OrderPaymentstatus
-import com.study.jooq.enums.OrderRefundstatus
 import com.vietq.demo_map_app_backend.dto.OrderResponseDto
 import org.jooq.DSLContext
 import org.springframework.stereotype.Repository
@@ -10,7 +9,6 @@ import com.study.jooq.tables.Order.Companion.ORDER
 import com.study.jooq.tables.OrderCartItems.Companion.ORDER_CART_ITEMS
 import com.study.jooq.tables.OrderCartItemsCancel.Companion.ORDER_CART_ITEMS_CANCEL
 import com.vietq.demo_map_app_backend.dto.CreateOrderDto
-import com.vietq.demo_map_app_backend.dto.OrderAdminResponseDto
 import com.vietq.demo_map_app_backend.dto.OrderDeliveryInfoDto
 import com.vietq.demo_map_app_backend.mapper.OrderMapper
 import org.jooq.impl.DSL
@@ -22,12 +20,13 @@ class OrderRepository(
     private val dsl: DSLContext,
     private val orderMapper: OrderMapper
 ) {
+    /**
+     * the purpose is insert order and cart items of this order
+     */
     fun insertOrder(dto: CreateOrderDto, orderCode: String, userDeliveryInfo: OrderDeliveryInfoDto): Long {
 
         return dsl.transactionResult { config ->
-
             val ctx = DSL.using(config)
-
             // Insert ORDER
             val orderId = ctx.insertInto(ORDER)
                 .set(ORDER.MARTID, dto.martId)
@@ -52,9 +51,8 @@ class OrderRepository(
                 ?.get(ORDER.ID)
                 ?: throw IllegalStateException("Insert order failed")
 
-            // Insert cart items
+            // INSERT CART ITEMS
             dto.cartData.forEach { item ->
-
                 ctx.insertInto(ORDER_CART_ITEMS)
                     .set(ORDER_CART_ITEMS.ORDERCODE, orderCode)
                     .set(ORDER_CART_ITEMS.PRODUCTID, item.id)
@@ -67,12 +65,13 @@ class OrderRepository(
                     .set(ORDER_CART_ITEMS.CREATEDAT, LocalDateTime.now())
                     .execute()
             }
-
             orderId
         }
     }
 
-
+    /**
+     * the purpose is get the list of orders by user
+     */
     fun getOrders(userId: Long): List<OrderResponseDto> {
 
         val orders = dsl
@@ -83,6 +82,7 @@ class OrderRepository(
 
         val orderCodes = orders.map { it.orderCode }
 
+        // GET CART ITEMS
         val cartMap = dsl
             .selectFrom(ORDER_CART_ITEMS)
             .where(ORDER_CART_ITEMS.ORDERCODE.`in`(orderCodes))
@@ -97,6 +97,9 @@ class OrderRepository(
         }
     }
 
+    /**
+     * the purpose is get an order info  by 'orderId'
+     */
     fun getOrderById(orderId: Long): OrderResponseDto? {
 
         val order = dsl
@@ -108,13 +111,13 @@ class OrderRepository(
 
         val orderCode = order.orderCode
 
-        // GET CART
+        // GET CART ITEMS
         val carts = dsl
             .selectFrom(ORDER_CART_ITEMS)
             .where(ORDER_CART_ITEMS.ORDERCODE.eq(orderCode))
             .fetch { r -> orderMapper.toCartItemResponse(r) }
 
-        // GET CART ITEM CANCEL
+        // GET CART ITEMS CANCEL
         val cartCancels = dsl
             .selectFrom(ORDER_CART_ITEMS_CANCEL)
             .where(ORDER_CART_ITEMS_CANCEL.ORDERCODE.eq(orderCode))
@@ -126,6 +129,9 @@ class OrderRepository(
         )
     }
 
+    /**
+     * the purpose is get an order info by 'orderCode'
+     */
     fun getOrderByCode(orderCode: String): OrderResponseDto? {
 
         val order = dsl
@@ -135,6 +141,7 @@ class OrderRepository(
                 orderMapper.toOrderResponse(r)
             } ?: return null
 
+        // GET CART ITEMS
         val cartItems = dsl
             .selectFrom(ORDER_CART_ITEMS)
             .where(ORDER_CART_ITEMS.ORDERCODE.eq(orderCode))
@@ -144,6 +151,7 @@ class OrderRepository(
 
         return order.copy(cartData = cartItems)
     }
+
 
     /**
      * the purpose is update 'orderStatus' and 'paymentStatus'

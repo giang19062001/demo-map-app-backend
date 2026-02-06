@@ -17,19 +17,14 @@ class ProductRepository(
     fun getProducts(categoryId: Long): List<ProductResponseDto> {
 
         val condition = if (categoryId == 0L) {
-            DSL.noCondition() // GET ALL khi category = 0 (ALL)
+            // GET ALL WHEN category = 0 (ALL)
+            DSL.noCondition()
         } else {
             PRODUCT.CATEGORYID.eq(categoryId)
         }
         return dsl
-            .select(
-                PRODUCT.ID,
-                PRODUCT.CATEGORYID,
-                CATEGORY.NAME.`as`("categoryName"),
-                PRODUCT.NAME,
-                PRODUCT.PRICE,
-                PRODUCT.IMAGE
-            )
+            .select(PRODUCT.ID, PRODUCT.CATEGORYID, CATEGORY.NAME.`as`("categoryName"),
+                PRODUCT.NAME, PRODUCT.PRICE, PRODUCT.IMAGE)
             .from(PRODUCT)
             .join(CATEGORY)
             .on(PRODUCT.CATEGORYID.eq(CATEGORY.ID))

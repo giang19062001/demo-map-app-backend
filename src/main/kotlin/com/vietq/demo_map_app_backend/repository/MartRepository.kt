@@ -17,13 +17,7 @@ class MartRepository(
 ) {
     fun getMartLocationFromOrder(orderId: Long): MartLocationFromOrderResponseDto? {
         return dsl
-            .select(
-                ORDER.ID,
-                ORDER.MARTID,
-                ORDER.SHIPPERID,
-                MART.LAT,
-                MART.LON
-            )
+            .select(ORDER.ID, ORDER.MARTID, ORDER.SHIPPERID, MART.LAT, MART.LON)
             .from(ORDER)
             .join(MART)
             .on(ORDER.MARTID.eq(MART.ID))
@@ -57,15 +51,7 @@ class MartRepository(
         ).`as`("distance")
 
         return dsl
-            .select(
-                MART.ID,
-                MART.NAME,
-                MART.LAT,
-                MART.LON,
-                MART.IMAGE,
-                MART.ADDRESS,
-                distanceField
-            )
+            .select(MART.ID, MART.NAME, MART.LAT, MART.LON, MART.IMAGE, MART.ADDRESS, distanceField)
             .from(MART)
             .where(MART.ACTIVE.eq(1))
             .and(MART.LON.between(lon - 0.1, lon + 0.1))

@@ -12,7 +12,7 @@ class MartService(
 
 ) {
     private val radius: Double = 5.0 // km
-    private  val limit: Int = 10
+    private val limit: Int = 10
 
     fun getNearestMarts(dto: MartRequestDto): List<MartResponseDto> {
         return martRepository.findNearestMarts(dto.lat, dto.lon, radius, limit)

@@ -6,7 +6,6 @@ import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.ModelAttribute
-import org.springframework.web.bind.annotation.RequestParam
 
 @Controller
 class PaymentViewController(
@@ -21,10 +20,7 @@ class PaymentViewController(
 
     // FOR EPAY CALLBACK
     @GetMapping("/view/payment/callBackUrl")
-    fun paymentCallback(
-        @ModelAttribute dto: PaymentCallbackDto,
-        model: Model
-    ): String {
+    fun paymentCallback(@ModelAttribute dto: PaymentCallbackDto, model: Model): String {
 
         // For 'html'
         model.addAttribute("resultCd", dto.resultCd)

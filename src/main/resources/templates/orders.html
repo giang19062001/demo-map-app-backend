@@ -336,6 +336,16 @@
             font-weight: 500;
         }
 
+         .field-normal.cancel-entire {
+            color: #ad3621;
+            font-weight: 500;
+        }
+
+         .field-normal.cancel-partial {
+            color: #d9b600;
+            font-weight: 500;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .flex-container {
@@ -467,322 +477,323 @@
     </div>
 
     <script>
-        const host = window.location.origin;
-        // const host = "http://localhost:8502";
-        let currentOrderCode = null;
-        let currentItemId = null;
-        let userList = [];
-        let orderList = [];
+        const host = window.location.hostname === 'localhost' ? 'http://localhost:8502' : window.location.origin;
+         let currentOrderCode = null;
+         let currentItemId = null;
+         let userList = [];
+         let orderList = [];
 
-        function showLoading() {
-            document.getElementById('loading-overlay').style.display = 'flex';
-        }
+         function showLoading() {
+             document.getElementById('loading-overlay').style.display = 'flex';
+         }
 
-        function hideLoading() {
-            document.getElementById('loading-overlay').style.display = 'none';
-        }
-
-
-        document.addEventListener("DOMContentLoaded", () => {
-            loadUsers();
-        });
+         function hideLoading() {
+             document.getElementById('loading-overlay').style.display = 'none';
+         }
 
 
-        async function loadUsers() {
-            showLoading();
-
-            fetch(host + "/api/user/getUsers")
-                .then(res => res.json())
-                .then(data => {
-                    userList = data;
-                    renderUserSelect(data);
-
-                    // auto select user 1st
-                    if (data.length > 0) {
-                        const select = document.getElementById("userSelect");
-                        select.value = data[0].id;
-                        loadOrders(data[0].id);
-                    }
-                }).finally(() => hideLoading());
-
-        }
-
-        async function loadOrders(userId) {
-            showLoading();
-
-            const userSelected = document.getElementById("userSelect").value
-            fetch(`${host}/api/admin/order/getOrders?userId=${userId ?? userSelected}`)
-                .then(res => res.json())
-                .then(data => {
-                    orderList = data;
-                    renderOrders(data);
-                }).finally(() => hideLoading());
-        }
-
-        function renderUserSelect(users) {
-            const select = document.getElementById("userSelect");
-            select.innerHTML = `<option value="0">-- Select User --</option>`;
-
-            users.forEach(u => {
-                const opt = document.createElement("option");
-                opt.value = u.id;
-                opt.textContent = u.name;
-                select.appendChild(opt);
-            });
-        }
-
-        function renderOrders(orders) {
-            const tbody = document.querySelector("#orderTable tbody");
-            tbody.innerHTML = "";
-
-            orders.forEach(order => {
-                const tr = document.createElement("tr");
-                const isSuccess = order.paymentStatus == "PAYMENT_SUCCESS" || order.resultCd == "00_000"
-                const isFail = order.paymentStatus == "PAYMENT_FAIL" || (String(order.resultCd).trim() !== "" && order.resultCd != "00_000")
-                const isRefund = order.status == "2" && order.remainAmount == "0"
-
-                tr.innerHTML = `
-                    <td class="field-normal center">${order.ordererName}</td>
-                    <td class="field-normal">
-                        <p>orderId: <b>${order.id}</b></p>
-                        <p>orderCode: <b>${order.orderCode}</b></p>
-                        <p>trxId: <b>${order.trxId}</b></p>
-                        <p>merTrxId: <b>${order.merTrxId}</b></p>
-                    </td>
-                    <td class="field-normal center">${order.amount}</td>
-                    <td class="field-normal center">${order.remainAmount}</td>
-                    <td class="field-normal center ${isSuccess ? "success" : ""}  ${isFail ? "fail" : ""}">${order.paymentStatus}</td>
-                    <td class="field-normal center">${order.refundStatus}</td>
-                    <td class="field-normal center ${isSuccess ? "success" : ""}  ${isFail ? "fail" : ""} msg">${order.resultCd ?? '-'} / ${order.status ?? '-'} / ${order.resultMsg ?? '-'}</td>
-                    <td class="field-normal">
-                        <p>Pay Type: ${order.payType ?? '-'}</p>
-                        <p>Bank: ${order.bankId ?? '-'}</p>
-                        <p>Card: ${order.cardNo ?? '-'}</p>
-                    </td>
-                    <td class="field-normal">
-                        <p>Cart Total:  ${order.cartTotal}</p>
-                        <p>Delivery:  +${order.deliveryFee}</p>
-                        <p>Discount:  -${order.discount}</p>
-                        <p>Coupon:  -${order.couponVolume}</p>
-                        <p>Point:  -${order.pointVolume}</p>
-                    </td>
-
-                    <td style="width:11em">
-                        ${isSuccess 
-                        ? `<div class="btn-group">
-                            ${!isRefund ? `<button class="btn btn-danger" onclick="cancelEntire('${order.orderCode}')">Cancel Entire</button>` :""}
-                            <button class="btn btn-cancel-each" onclick="toggleExpand('${order.orderCode}', this)">Show Items</button>
-                        </div>` : ""}
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function onUserChange() {
-            const userId = document.getElementById("userSelect").value;
-            loadOrders(userId);
-        }
+         document.addEventListener("DOMContentLoaded", () => {
+             loadUsers();
+         });
 
 
+         async function loadUsers() {
+             showLoading();
 
-        async function cancelEntire(orderCode) {
-            if (!confirm("Are you sure you want to cancel this entire order?")) return;
+             fetch(host + "/api/user/getUsers")
+                 .then(res => res.json())
+                 .then(data => {
+                     userList = data;
+                     renderUserSelect(data);
 
-            showLoading();
-            fetch(`${host}/api/admin/order/cancelEntireOrder/${orderCode}`, { method: "PUT" })
-                .then(() => loadOrders()).finally(() => hideLoading());
-        }
+                     // auto select user 1st
+                     if (data.length > 0) {
+                         const select = document.getElementById("userSelect");
+                         select.value = data[0].id;
+                         loadOrders(data[0].id);
+                     }
+                 }).finally(() => hideLoading());
 
-        async function toggleExpand(orderCode, btn) {
-            const tr = btn.closest("tr");
+         }
 
-            // close expand
-            if (tr.nextSibling && tr.nextSibling.classList.contains("expand-row")) {
-                tr.nextSibling.remove();
-                btn.textContent = "Show Items";
-                return;
-            }
+         async function loadOrders(userId) {
+             showLoading();
 
-            showLoading();
-            const order = await fetch(`${host}/api/admin/order/getOrderByCode/${orderCode}`, {
-                method: "GET"
-                })
-                .then(response => response.json()) 
-                .then(data => { return data; })
-                .finally(() => { hideLoading(); });
+             const userSelected = document.getElementById("userSelect").value
+             fetch(`${host}/api/admin/order/getOrders?userId=${userId ?? userSelected}`)
+                 .then(res => res.json())
+                 .then(data => {
+                     orderList = data;
+                     renderOrders(data);
+                 }).finally(() => hideLoading());
+         }
 
-            if (!order) return;
+         function renderUserSelect(users) {
+             const select = document.getElementById("userSelect");
+             select.innerHTML = `<option value="0">-- Select User --</option>`;
 
-            const expandTr = document.createElement("tr");
-            expandTr.className = "expand-row";
-            expandTr.innerHTML = `
-                <td colspan="10">
-                    <div class="flex-container">
-                        <div class="box">
-                            <h4>Cart Items Original</h4>
-                            ${renderOriginalList(order.cartDataOriginal)}
-                        </div>
-                        <div class="box">
-                            <h4>Cart Items Current</h4>
-                            ${renderItemList(order.cartDataCurrent, orderCode)}
-                        </div>
-                        <div class="box">
-                            <h4>Cart Items Were Cancelled <span class="cancelled-badge">${order.cartDataCancel ? order.cartDataCancel.length : 0}</span></h4>
-                            ${renderCanceledList(order.cartDataCancel)}
-                        </div>
-                    </div>
-                </td>
-            `;
+             users.forEach(u => {
+                 const opt = document.createElement("option");
+                 opt.value = u.id;
+                 opt.textContent = u.name;
+                 select.appendChild(opt);
+             });
+         }
 
-            tr.after(expandTr);
-            btn.textContent = "Hide Items";
-        }
+         function renderOrders(orders) {
+             const tbody = document.querySelector("#orderTable tbody");
+             tbody.innerHTML = "";
+
+             orders.forEach(order => {
+                 const tr = document.createElement("tr");
+                 const isSuccess = order.paymentStatus == "PAYMENT_SUCCESS" || order.resultCd == "00_000"
+                 const isFail = order.paymentStatus == "PAYMENT_FAIL" || (String(order.resultCd).trim() !== "" && order.resultCd != "00_000")
+                 const isRefundDone = order.status == "2" && order.remainAmount == "0"
+                 const isRefundEntire = order.refundStatus == "ENTIRE" &&  order.status == "2"
+                 const isRefundPartial = order.refundStatus == "PARTIAL"  &&  order.status == "2"
+
+                 tr.innerHTML = `
+                     <td class="field-normal center">${order.ordererName}</td>
+                     <td class="field-normal">
+                         <p>orderId: <b>${order.id}</b></p>
+                         <p>orderCode: <b>${order.orderCode}</b></p>
+                         <p>trxId: <b>${order.trxId}</b></p>
+                         <p>merTrxId: <b>${order.merTrxId}</b></p>
+                     </td>
+                     <td class="field-normal center">${order.amount}</td>
+                     <td class="field-normal center">${order.remainAmount}</td>
+                     <td class="field-normal center ${isSuccess ? "success" : ""}  ${isFail ? "fail" : ""}">${order.paymentStatus}</td>
+                     <td class="field-normal center ${isRefundEntire ? "cancel-entire" : ""}  ${isRefundPartial ? "cancel-partial" : ""}">${order.refundStatus}</td>
+                     <td class="field-normal center ${isSuccess ? "success" : ""}  ${isFail ? "fail" : ""} msg">${order.resultCd ?? '-'} / ${order.status ?? '-'} / ${order.resultMsg ?? '-'}</td>
+                     <td class="field-normal">
+                         <p>Pay Type: ${order.payType ?? '-'}</p>
+                         <p>Bank: ${order.bankId ?? '-'}</p>
+                         <p>Card: ${order.cardNo ?? '-'}</p>
+                     </td>
+                     <td class="field-normal">
+                         <p>Cart Total:  ${order.cartTotal}</p>
+                         <p>Delivery:  +${order.deliveryFee}</p>
+                         <p>Discount:  -${order.discount}</p>
+                         <p>Coupon:  -${order.couponVolume}</p>
+                         <p>Point:  -${order.pointVolume}</p>
+                     </td>
+
+                     <td style="width:11em">
+                         ${isSuccess
+                         ? `<div class="btn-group">
+                             ${!isRefundDone ? `<button class="btn btn-danger" onclick="cancelEntire('${order.orderCode}')">Cancel Entire</button>` :""}
+                             <button class="btn btn-cancel-each" onclick="toggleExpand('${order.orderCode}', this)">Show Items</button>
+                         </div>` : ""}
+                     </td>
+                 `;
+                 tbody.appendChild(tr);
+             });
+         }
+
+         function onUserChange() {
+             const userId = document.getElementById("userSelect").value;
+             loadOrders(userId);
+         }
 
 
-        function renderOriginalList(items) {
-            if (!items || !items.length) return "<div class='empty-message'>Empty list</div>";
 
-            return `
-                <table class="inner-table">
-                    <thead>
-                        <tr>
-                            <th>Product</th>
-                            <th>Price</th>
-                            <th>Qty</th>
-                            <th>Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${items.map(i => `
-                            <tr>
-                                <td>${i.name}</td>
-                                <td>${i.price}</td>
-                                <td>${i.quantity}</td>
-                                <td>${i.quantity * i.price}</td>
-                            </tr>
-                        `).join("")}
-                    </tbody>
-                </table>
-            `;
-        }
+         async function cancelEntire(orderCode) {
+             if (!confirm("Are you sure you want to cancel this entire order?")) return;
 
-        function renderItemList(items, orderCode) {
-            if (!items || !items.length) return "<div class='empty-message'>Empty list</div>";
+             showLoading();
+             fetch(`${host}/api/admin/order/cancelEntireOrder/${orderCode}`, { method: "PUT" })
+                 .then(() => loadOrders()).finally(() => hideLoading());
+         }
 
-            return `
-                <table class="inner-table">
-                    <thead>
-                        <tr>
-                            <th>Product</th>
-                            <th>Price</th>
-                            <th>Qty</th>
-                            <th>Total</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${items.map(i => `
-                            <tr>
-                                <td>${i.name}</td>
-                                <td>${i.price}</td>
-                                <td>${i.quantity}</td>
-                                <td>${i.quantity * i.price}</td>
-                                <td>
-                                    <button class="btn btn-danger btn-sm" onclick="openModal('${orderCode}','${i.id}', '${i.name}','${i.image}', '${i.quantity}', '${i.price}', '${i.categoryId}', '${i.categoryName}')">Cancel</button>
-                                </td>
-                            </tr>
-                        `).join("")}
-                    </tbody>
-                </table>
-            `;
-        }
+         async function toggleExpand(orderCode, btn) {
+             const tr = btn.closest("tr");
 
-        function renderCanceledList(items) {
-            if (!items || !items.length) return "<div class='empty-message'>Empty list</div>";
+             // close expand
+             if (tr.nextSibling && tr.nextSibling.classList.contains("expand-row")) {
+                 tr.nextSibling.remove();
+                 btn.textContent = "Show Items";
+                 return;
+             }
 
-            return `
-                <table class="inner-table">
-                    <thead>
-                        <tr>
-                            <th>Product</th>
-                            <th>Price</th>
-                            <th>Cancelled Qty</th>
-                            <th>Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${items.map(i => `
-                            <tr>
-                                <td>${i.name}</td>
-                                <td>${i.price}</td>
-                                <td>${i.quantity}</td>
-                                <td>${i.quantity * i.price}</td>
-                            </tr>
-                        `).join("")}
-                    </tbody>
-                </table>
-            `;
-        }
+             showLoading();
+             const order = await fetch(`${host}/api/admin/order/getOrderByCode/${orderCode}`, {
+                 method: "GET"
+                 })
+                 .then(response => response.json())
+                 .then(data => { return data; })
+                 .finally(() => { hideLoading(); });
 
-        function openModal(orderCode, itemId, name, image, quantity, price, categoryId, categoryName) {
-            currentOrderCode = orderCode;
-            currentItemId = itemId;
-            document.getElementById("name").value = name;
-            document.getElementById("image").value = image;
-            document.getElementById("price").value = price;
-            document.getElementById("categoryId").value = categoryId;
-            document.getElementById("categoryName").value = categoryName;
-            document.getElementById("currentQty").value = quantity;
-            document.getElementById("cancelQty").value = "";
-            document.getElementById("cancelModal").style.display = "flex";
-        }
+             if (!order) return;
 
-        function closeModal() {
-            document.getElementById("cancelModal").style.display = "none";
-        }
+             const expandTr = document.createElement("tr");
+             expandTr.className = "expand-row";
+             expandTr.innerHTML = `
+                 <td colspan="10">
+                     <div class="flex-container">
+                         <div class="box">
+                             <h4>Cart Items Original</h4>
+                             ${renderOriginalList(order.cartDataOriginal)}
+                         </div>
+                         <div class="box">
+                             <h4>Cart Items Current</h4>
+                             ${renderItemList(order.cartDataCurrent, orderCode)}
+                         </div>
+                         <div class="box">
+                             <h4>Cart Items Were Cancelled <span class="cancelled-badge">${order.cartDataCancel ? order.cartDataCancel.length : 0}</span></h4>
+                             ${renderCanceledList(order.cartDataCancel)}
+                         </div>
+                     </div>
+                 </td>
+             `;
 
-        async function submitCancelItem() {
-            const name = document.getElementById("name").value;
-            const image = document.getElementById("image").value;
-            const price = document.getElementById("price").value;
-            const categoryId = document.getElementById("categoryId").value;
-            const categoryName = document.getElementById("categoryName").value;
-            const currentQty = document.getElementById("currentQty").value;
-            const cancelQty = document.getElementById("cancelQty").value;
+             tr.after(expandTr);
+             btn.textContent = "Hide Items";
+         }
 
-            if (!cancelQty || cancelQty <= 0) {
-                alert("Please enter a valid quantity");
-                return;
-            }
 
-            if (cancelQty > currentQty) {
-                alert("Cancellations cannot exceed the available quantity");
-                return;
-            }
+         function renderOriginalList(items) {
+             if (!items || !items.length) return "<div class='empty-message'>Empty list</div>";
 
-            showLoading();
+             return `
+                 <table class="inner-table">
+                     <thead>
+                         <tr>
+                             <th>Product</th>
+                             <th>Price</th>
+                             <th>Qty</th>
+                             <th>Total</th>
+                         </tr>
+                     </thead>
+                     <tbody>
+                         ${items.map(i => `
+                             <tr>
+                                 <td>${i.name}</td>
+                                 <td>${i.price}</td>
+                                 <td>${i.quantity}</td>
+                                 <td>${i.quantity * i.price}</td>
+                             </tr>
+                         `).join("")}
+                     </tbody>
+                 </table>
+             `;
+         }
 
-            fetch(`${host}/api/admin/order/cancelPartialOrder/${currentOrderCode}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    productId: Number(currentItemId), quantity: Number(cancelQty), price: Number(price),
-                    name: name, image: image, categoryId: Number(categoryId), categoryName: categoryName
-                })
-            }).then(() => {
-                closeModal();
-                loadOrders();
-            }).finally(() => hideLoading());
-        }
+         function renderItemList(items, orderCode) {
+             if (!items || !items.length) return "<div class='empty-message'>Empty list</div>";
 
-        // Close modal when clicking outside
-        window.onclick = function (event) {
-            const modal = document.getElementById("cancelModal");
-            if (event.target === modal) {
-                closeModal();
-            }
-        };
+             return `
+                 <table class="inner-table">
+                     <thead>
+                         <tr>
+                             <th>Product</th>
+                             <th>Price</th>
+                             <th>Qty</th>
+                             <th>Total</th>
+                             <th>Action</th>
+                         </tr>
+                     </thead>
+                     <tbody>
+                         ${items.map(i => `
+                             <tr>
+                                 <td>${i.name}</td>
+                                 <td>${i.price}</td>
+                                 <td>${i.quantity}</td>
+                                 <td>${i.quantity * i.price}</td>
+                                 <td>
+                                     <button class="btn btn-danger btn-sm" onclick="openModal('${orderCode}','${i.id}', '${i.name}','${i.image}', '${i.quantity}', '${i.price}', '${i.categoryId}', '${i.categoryName}')">Cancel</button>
+                                 </td>
+                             </tr>
+                         `).join("")}
+                     </tbody>
+                 </table>
+             `;
+         }
+
+         function renderCanceledList(items) {
+             if (!items || !items.length) return "<div class='empty-message'>Empty list</div>";
+
+             return `
+                 <table class="inner-table">
+                     <thead>
+                         <tr>
+                             <th>Product</th>
+                             <th>Price</th>
+                             <th>Cancelled Qty</th>
+                             <th>Total</th>
+                         </tr>
+                     </thead>
+                     <tbody>
+                         ${items.map(i => `
+                             <tr>
+                                 <td>${i.name}</td>
+                                 <td>${i.price}</td>
+                                 <td>${i.quantity}</td>
+                                 <td>${i.quantity * i.price}</td>
+                             </tr>
+                         `).join("")}
+                     </tbody>
+                 </table>
+             `;
+         }
+
+         function openModal(orderCode, itemId, name, image, quantity, price, categoryId, categoryName) {
+             currentOrderCode = orderCode;
+             currentItemId = itemId;
+             document.getElementById("name").value = name;
+             document.getElementById("image").value = image;
+             document.getElementById("price").value = price;
+             document.getElementById("categoryId").value = categoryId;
+             document.getElementById("categoryName").value = categoryName;
+             document.getElementById("currentQty").value = quantity;
+             document.getElementById("cancelQty").value = "";
+             document.getElementById("cancelModal").style.display = "flex";
+         }
+
+         function closeModal() {
+             document.getElementById("cancelModal").style.display = "none";
+         }
+
+         async function submitCancelItem() {
+             const name = document.getElementById("name").value;
+             const image = document.getElementById("image").value;
+             const price = document.getElementById("price").value;
+             const categoryId = document.getElementById("categoryId").value;
+             const categoryName = document.getElementById("categoryName").value;
+             const currentQty = document.getElementById("currentQty").value;
+             const cancelQty = document.getElementById("cancelQty").value;
+
+             if (!cancelQty || cancelQty <= 0) {
+                 alert("Please enter a valid quantity");
+                 return;
+             }
+
+             if (cancelQty > currentQty) {
+                 alert("Cancellations cannot exceed the available quantity");
+                 return;
+             }
+
+             showLoading();
+
+             fetch(`${host}/api/admin/order/cancelPartialOrder/${currentOrderCode}`, {
+                 method: "PUT",
+                 headers: { "Content-Type": "application/json" },
+                 body: JSON.stringify({
+                     productId: Number(currentItemId), quantity: Number(cancelQty), price: Number(price),
+                     name: name, image: image, categoryId: Number(categoryId), categoryName: categoryName
+                 })
+             }).then(() => {
+                 closeModal();
+                 loadOrders();
+             }).finally(() => hideLoading());
+         }
+
+         // Close modal when clicking outside
+         window.onclick = function (event) {
+             const modal = document.getElementById("cancelModal");
+             if (event.target === modal) {
+                 closeModal();
+             }
+         };
     </script>
 </body>
 

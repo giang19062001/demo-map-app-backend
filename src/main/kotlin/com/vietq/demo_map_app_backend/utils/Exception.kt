@@ -1,6 +1,4 @@
 package com.vietq.demo_map_app_backend.utils
-
-import com.vietq.demo_map_app_backend.service.PaymentService
 import org.apache.coyote.BadRequestException
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus

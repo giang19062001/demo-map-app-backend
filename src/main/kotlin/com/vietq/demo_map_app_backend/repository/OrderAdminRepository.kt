@@ -1,7 +1,6 @@
 package com.vietq.demo_map_app_backend.repository
 
 import com.study.jooq.enums.OrderOrderstatus
-import com.study.jooq.enums.OrderPaymentstatus
 import com.study.jooq.enums.OrderRefundstatus
 import org.jooq.DSLContext
 import org.springframework.stereotype.Repository
@@ -10,12 +9,9 @@ import com.study.jooq.tables.OrderCancel.Companion.ORDER_CANCEL
 import com.study.jooq.tables.OrderCartItems.Companion.ORDER_CART_ITEMS
 import com.study.jooq.tables.OrderCartItemsCancel.Companion.ORDER_CART_ITEMS_CANCEL
 import com.study.jooq.tables.OrderEpay.Companion.ORDER_EPAY
-import com.vietq.demo_map_app_backend.dto.CreateOrderDto
 import com.vietq.demo_map_app_backend.dto.InsertCancelEntireDto
 import com.vietq.demo_map_app_backend.dto.InsertCancelPartialDto
 import com.vietq.demo_map_app_backend.dto.OrderAdminResponseDto
-import com.vietq.demo_map_app_backend.dto.OrderCancelPartialDto
-import com.vietq.demo_map_app_backend.dto.OrderDeliveryInfoDto
 import com.vietq.demo_map_app_backend.mapper.OrderMapper
 import org.jooq.impl.DSL
 import java.time.LocalDateTime
@@ -25,6 +21,9 @@ class OrderAdminRepository(
     private val dsl: DSLContext,
     private val orderMapper: OrderMapper
 ) {
+    /**
+     * The purpose is to log the event of entire cancellation.
+     */
     fun insertCancelEntire(dto: InsertCancelEntireDto): Long? {
         return dsl.transactionResult { config ->
             val ctx = DSL.using(config)
@@ -43,6 +42,9 @@ class OrderAdminRepository(
         }
     }
 
+    /**
+     * the purpose is to log the events of partially canceling individual items
+     */
     fun insertCancelPartial(dto: InsertCancelPartialDto): Long? {
         return dsl.transactionResult { config ->
             val ctx = DSL.using(config)
@@ -113,6 +115,9 @@ class OrderAdminRepository(
     }
 
 
+    /**
+     * the purpose is get the list of orders by user ( For admin page )
+     */
     fun getAdminOrders(userId: Long): List<OrderAdminResponseDto> {
         val orders = dsl
             .select(
@@ -140,6 +145,9 @@ class OrderAdminRepository(
 
     }
 
+    /**
+     * the purpose is get an order info by 'orderCode' ( For admin page )
+     */
     fun getAdminOrderByCode(orderCode: String): OrderAdminResponseDto? {
         val order = dsl
             .select(
@@ -158,13 +166,13 @@ class OrderAdminRepository(
             .fetchOne { r -> orderMapper.toOrderAdminResponse(r) }
             ?: return null
 
-        // GET CART
+        // GET CART ITEMS
         val carts = dsl
             .selectFrom(ORDER_CART_ITEMS)
             .where(ORDER_CART_ITEMS.ORDERCODE.eq(orderCode))
             .fetch { r -> orderMapper.toCartItemResponse(r) }
 
-        // GET CART ITEM CANCEL
+        // GET CART ITEMS CANCEL
         val cartCancels = dsl
             .selectFrom(ORDER_CART_ITEMS_CANCEL)
             .where(ORDER_CART_ITEMS_CANCEL.ORDERCODE.eq(orderCode))

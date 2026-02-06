@@ -1,10 +1,8 @@
 package com.vietq.demo_map_app_backend.dto
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.DecimalMin
-import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.Size
-import java.time.LocalDateTime
 
 
 // FOR API 'createOrder'

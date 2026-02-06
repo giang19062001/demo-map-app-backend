@@ -1,8 +1,6 @@
 package com.vietq.demo_map_app_backend.mapper
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.study.jooq.enums.OrderEpayPaytype
-import com.study.jooq.enums.OrderPaymentstatus
 import com.study.jooq.tables.Order.Companion.ORDER
 import com.study.jooq.tables.OrderCartItems.Companion.ORDER_CART_ITEMS
 import com.study.jooq.tables.OrderCartItemsCancel.Companion.ORDER_CART_ITEMS_CANCEL

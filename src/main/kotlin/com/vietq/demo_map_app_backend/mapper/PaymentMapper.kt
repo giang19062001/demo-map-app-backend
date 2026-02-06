@@ -36,10 +36,7 @@ class PaymentMapper {
             resultMsg =r[ORDER_EPAY.RESULTMSG]!!
         )
 
-    fun toCreateLinkResponse(
-        res: PaymentCreateLinkResponseDto?,
-        decryptedPaymentLink: String
-    ): CreateOrderResponseDto {
+    fun toCreateLinkResponse(res: PaymentCreateLinkResponseDto?, decryptedPaymentLink: String): CreateOrderResponseDto {
 
         return CreateOrderResponseDto(
             resultCd = res?.resultCd.orEmpty(),
@@ -59,9 +56,7 @@ class PaymentMapper {
         )
     }
 
-    fun toUpsertPaymentDto(
-        dto: PaymentCallbackDto,
-    ): UpsertPaymentDto {
+    fun toUpsertPaymentDto(dto: PaymentCallbackDto, ): UpsertPaymentDto {
         return UpsertPaymentDto(
             orderCode = dto.invoiceNo,
             merTrxId = dto.merTrxId,
@@ -84,9 +79,7 @@ class PaymentMapper {
         )
     }
 
-    fun toUpsertPaymentDto(
-        dto: PaymentGetTransactionDataResponseDto,
-    ): UpsertPaymentDto {
+    fun toUpsertPaymentDto(dto: PaymentGetTransactionDataResponseDto, ): UpsertPaymentDto {
         return UpsertPaymentDto(
             orderCode = dto.invoiceNo,
             merTrxId = dto.merTrxId,

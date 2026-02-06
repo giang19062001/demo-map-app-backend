@@ -4,8 +4,6 @@ import com.study.jooq.enums.OrderEpayPaytype
 import com.study.jooq.enums.OrderOrderstatus
 import com.study.jooq.enums.OrderPaymentstatus
 import com.study.jooq.enums.OrderRefundstatus
-import io.swagger.v3.oas.annotations.media.ArraySchema
-import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 
 

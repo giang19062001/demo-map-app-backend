@@ -1,10 +1,9 @@
 package com.vietq.demo_map_app_backend.service
 
 import PaymentCallbackDto
-import com.study.jooq.enums.OrderOrderstatus
 import com.study.jooq.enums.OrderEpayPaytype
 import com.study.jooq.enums.OrderPaymentstatus
-import com.vietq.demo_map_app_backend.component.CallApiComponent
+import com.vietq.demo_map_app_backend.component.ApiCaller
 import com.vietq.demo_map_app_backend.config.EpayConfig
 import com.vietq.demo_map_app_backend.config.TimezoneConfig
 import com.vietq.demo_map_app_backend.dto.CreateOrderDto
@@ -19,7 +18,6 @@ import com.vietq.demo_map_app_backend.dto.PaymentGetTransactionDataResponseDto
 import com.vietq.demo_map_app_backend.dto.PaymentGetTransactionResponseDto
 import com.vietq.demo_map_app_backend.mapper.PaymentMapper
 import com.vietq.demo_map_app_backend.repository.PaymentRepository
-import com.vietq.demo_map_app_backend.utils.EpayMerchantCodeEnum
 import com.vietq.demo_map_app_backend.utils.EpayTransactionResultCodeEnum
 import com.vietq.demo_map_app_backend.utils.EpayTransactionStatuEnum
 import com.vietq.demo_map_app_backend.utils.decrypt3DES
@@ -29,12 +27,10 @@ import org.apache.coyote.BadRequestException
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import org.springframework.util.LinkedMultiValueMap
 import java.time.ZoneId
 import java.time.ZonedDateTime
-import kotlin.text.isNullOrBlank
 
 @Service
 class PaymentService(
@@ -44,7 +40,7 @@ class PaymentService(
     private val paymentMapper: PaymentMapper,
     private val userService: UserService,
     private val timezoneConfig: TimezoneConfig,
-    private val callApiComponent: CallApiComponent
+    private val apiCaller: ApiCaller
 
 ) {
     private val log = LoggerFactory.getLogger(PaymentService::class.java)
@@ -59,7 +55,7 @@ class PaymentService(
         const val EXPIRED_TIME = 15L // Expired in 15 minutes
         const val CANCEL_MSG = "Testing"
         const val CALLBACK_REDIRECT = "REDIRECT_URL"
-        const val CALLBACK_IPN = "IPM"
+        const val CALLBACK_IPN = "IPN"
 
     }
 
@@ -67,10 +63,7 @@ class PaymentService(
      * The purpose is created transaction into Epay and insert transaction into Database
      * @return: Link and Qrcode for Epay webview
      */
-    fun createOrder(
-        dto: CreateOrderDto,
-        clientIp: String
-    ): CreateOrderResponseDto {
+    fun createOrder(dto: CreateOrderDto, clientIp: String): CreateOrderResponseDto {
         val body = mutableMapOf<String, String>()
         val formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
         val timeStamp = System.currentTimeMillis().toString()
@@ -122,7 +115,7 @@ class PaymentService(
         log.info("logbase={} --- getMerchantTransaction: body={}", logbase, body)
         val createLinkUrl = epayConfig.createLinkUrl
         // CALL API EPAY
-        val res = callApiComponent.postJson(
+        val res = apiCaller.postJson(
             url = createLinkUrl,
             body = body,
             responseType = PaymentCreateLinkResponseDto::class.java
@@ -169,49 +162,52 @@ class PaymentService(
      */
     @Transactional
     fun checkPayment(invoiceNo: String): Pair<OrderPaymentstatus, String> {
-        log.info("logbase={} --- checkPayment: invoiceNo={}", logbase, invoiceNo)
 
         // GET INFO FROM DB
         val paymentInfo = paymentRepository.getPaymentByOrderCode(invoiceNo)
+        log.info("logbase={} --- checkPayment: invoiceNo={}, paymentInfo={}", logbase, invoiceNo, paymentInfo)
 
         // STATUS DEFAULT
-        var paymentStatus = if (paymentInfo != null) EpayTransactionResultCodeEnum.toPaymentStatus(paymentInfo.resultCd) else OrderPaymentstatus.NOT_YET
+        var paymentStatus =
+            if (paymentInfo != null) EpayTransactionResultCodeEnum.toPaymentStatus(paymentInfo.resultCd) else OrderPaymentstatus.NOT_YET
         var resultMsg = paymentInfo?.resultMsg ?: ""
 
-        // CHECKING ORDERCODE
-        orderService.getOrderByCode(invoiceNo) ?: throw BadRequestException("Order not found")
-        val timeStamp = System.currentTimeMillis().toString()
-        val merchantTokenInvoiceRaw = timeStamp + invoiceNo + epayConfig.merId + epayConfig.encodeKey
-        val merchantTokenInvoice = sha256(merchantTokenInvoiceRaw)
+        if (paymentInfo == null) {
+            // CHECKING ORDERCODE
+            orderService.getOrderByCode(invoiceNo) ?: throw BadRequestException("Order not found")
+            val timeStamp = System.currentTimeMillis().toString()
+            val merchantTokenInvoiceRaw = timeStamp + invoiceNo + epayConfig.merId + epayConfig.encodeKey
+            val merchantTokenInvoice = sha256(merchantTokenInvoiceRaw)
 
-        //  CALL API EPAY TO GET 'merTrxId'
-        val dataByInvoice = getMerchantTransaction(invoiceNo, merchantTokenInvoice, timeStamp)
+            //  CALL API EPAY TO GET 'merTrxId'
+            val dataByInvoice = getMerchantTransaction(invoiceNo, merchantTokenInvoice, timeStamp)
 
-        // CHECKING MERCHANT ID
-        val (fallbackPaymentStatus, fallbackResultMsg, isValid) = orderService.fallbackOrderMerchant(dataByInvoice.merTrxId, invoiceNo, paymentStatus, resultMsg)
-        if (!isValid) {
-            return Pair(fallbackPaymentStatus, fallbackResultMsg)
-        }else{
-            paymentStatus = fallbackPaymentStatus
-            resultMsg = fallbackResultMsg
+            // CHECKING MERCHANT ID
+            val (fallbackPaymentStatus, fallbackResultMsg, isValid) = orderService.fallbackOrderMerchant(dataByInvoice.merTrxId, invoiceNo, paymentStatus, resultMsg)
+            if (!isValid) {
+                return Pair(fallbackPaymentStatus, fallbackResultMsg)
+            } else {
+                paymentStatus = fallbackPaymentStatus
+                resultMsg = fallbackResultMsg
+            }
+
+            // CALL API EPAY TO CHECK TRANSACTION STATUS
+            val dataByTransaction = getTransactionStatus(dataByInvoice.merTrxId)
+
+            // CHECK CONDITION UPDATE
+            if (shouldUpsertOrderPayment(paymentInfo, dataByTransaction)) {
+                val body = paymentMapper.toUpsertPaymentDto(dataByTransaction)
+                paymentRepository.upsertPayment(body)
+
+                paymentStatus = orderService.updateOrderPaymentStatus(
+                    invoiceNo,
+                    dataByTransaction.resultCd,
+                    dataByTransaction.status
+                )
+                return Pair(paymentStatus, dataByTransaction.resultMsg)
+            }
         }
-
-        // CALL API EPAY TO CHECK TRANSACTION STATUS
-        val dataByTransaction = getTransactionStatus(dataByInvoice.merTrxId)
-
-       // CHECK CONDITION UPDATE
-        if (shouldUpsertOrderPayment(paymentInfo, dataByTransaction)) {
-            // UPDATE/INSERT PAYMENT
-            val body = paymentMapper.toUpsertPaymentDto(dataByTransaction)
-            paymentRepository.upsertPayment(body)
-
-            // CHECK CONDITION TO UPDATE ORDER
-            paymentStatus = orderService.updateOrderPaymentStatus(invoiceNo, dataByTransaction.resultCd, dataByTransaction.status)
-            return Pair(paymentStatus, dataByTransaction.resultMsg)
-        } else {
-            // IF THERE ARE AVAILABLE DATA -> RETURN DIRECTLY
-            return Pair(paymentStatus, resultMsg)
-        }
+        return Pair(paymentStatus, resultMsg)
     }
 
     /**
@@ -238,39 +234,36 @@ class PaymentService(
     private fun handleCallback(dto: PaymentCallbackDto, nameCallback: String) {
         log.info("logbase={} --- handleCallback: nameCallback={},  dto={}", logbase, nameCallback, dto)
 
-        when {
-            // FORCE FAILED - nếu thiếu merchantToken hoặc merTrxId
-            dto.merchantToken.isBlank() || dto.merTrxId.isBlank() -> {
-                // UPSERT PAYMENT
-                paymentRepository.upsertPayment(paymentMapper.toUpsertPaymentDto(dto))
-                // UPDATE ORDER STATUS
-                orderService.updateOrderPaymentStatus(dto.invoiceNo, dto.resultCd, dto.status)
-            }
+        val isTokenValid = verifyMerchantToken(dto)
+        val isRefund = EpayTransactionStatuEnum.isRefund(dto.status)
 
-            // CHECK API AGAIN IF VERIFY FAILED
-            !verifyMerchantToken(dto) -> {
-                // GET INFO FROM DB
-                val paymentInfo = paymentRepository.getPaymentByOrderCode(dto.invoiceNo)
-                // CALL API EPAY TO CHECK FINAL TRANSACTION STATUS
-                val dataByTransaction = getTransactionStatus(dto.merTrxId)
-                // CHECK CONDITION UPDATE
-                if (shouldUpsertOrderPayment(paymentInfo, dataByTransaction)) {
-                    // UPSERT PAYMENT
+        // VERIFY TOKEN FAILED or REFUND --> HAVE TO CALL TO GET LAST TRANSACTION STATUS
+        if (!isTokenValid || isRefund) {
+            // GET INFO FROM DB
+            val paymentInfo = paymentRepository.getPaymentByOrderCode(dto.invoiceNo)
+
+            // CALL API EPAY TO CHECK FINAL TRANSACTION STATUS
+            val dataByTransaction = getTransactionStatus(dto.merTrxId)
+
+            // CHECK CONDITION UPDATE
+            if (shouldUpsertOrderPayment(paymentInfo, dataByTransaction)) {
+                // HANDLE REFUND CASE
+                if (isRefund) {
+                    paymentRepository.changeOrderRemainAmount(dto.invoiceNo, dataByTransaction.remainAmount!!, dto.status)
+                } else {
+                    // HANDLE SUCCESS/FAIL CASE
                     paymentRepository.upsertPayment(paymentMapper.toUpsertPaymentDto(dataByTransaction))
-                    // UPDATE ORDER STATUS
-                    orderService.updateOrderPaymentStatus(dataByTransaction.invoiceNo, dataByTransaction.resultCd, dataByTransaction.status)
                 }
-            }
-
-            // VERIFY SUCCESS
-            else -> {
-                // UPSERT PAYMENT
-                paymentRepository.upsertPayment(paymentMapper.toUpsertPaymentDto(dto))
-                // UPDATE ORDER STATUS
-                orderService.updateOrderPaymentStatus(dto.invoiceNo, dto.resultCd, dto.status)
+                orderService.updateOrderPaymentStatus(dataByTransaction.invoiceNo, dataByTransaction.resultCd, dataByTransaction.status)
             }
         }
+        // VERIFY TOKEN SUCCESS --> ONLY HANDLE SUCCESS/FAIL CASE OF PAYMENT
+        else {
+            paymentRepository.upsertPayment(paymentMapper.toUpsertPaymentDto(dto))
+            orderService.updateOrderPaymentStatus(dto.invoiceNo, dto.resultCd, dto.status)
+        }
     }
+
 
     /**
      * The purpose is get info of Merchant ( Mainly: 'merTrxId')
@@ -284,9 +277,9 @@ class PaymentService(
             add("merchantToken", merchantTokenInvoice)
             add("timeStamp", timeStamp)
         }
-        log.info("logbase={} --- getMerchantTransaction: bodyByInvoice={}", logbase, bodyByInvoice)
 
-        val responseByInvoice = callApiComponent.postForm(
+        log.info("logbase={} --- getMerchantTransaction: bodyByInvoice={}", logbase, bodyByInvoice)
+        val responseByInvoice = apiCaller.postForm(
             url = epayConfig.inquiryNoStatusUrl,
             body = bodyByInvoice,
             responseType = PaymentGetMerchantResponseDto::class.java
@@ -314,13 +307,13 @@ class PaymentService(
             add("merchantToken", merchantTokenTransaction)
             add("timeStamp", timeStamp)
         }
+
         log.info("logbase={} --- getTransactionStatus: bodyByTransaction={}", logbase, bodyByTransaction)
-        val responseByTransaction = callApiComponent.postForm(
+        val responseByTransaction = apiCaller.postForm(
             url = epayConfig.inquiryStatusUrl,
             body = bodyByTransaction,
             responseType = PaymentGetTransactionResponseDto::class.java
         ) ?: throw BadRequestException("Call external API to get transaction status failed")
-
         log.info("logbase={} --- getTransactionStatus: responseByTransaction={}", logbase, responseByTransaction)
 
         val dataByTransaction = responseByTransaction.data
@@ -350,9 +343,9 @@ class PaymentService(
             add("merchantToken", merchantToken)
             add("cancelPw", epayConfig.cancelPw)
         }
-        log.info("logbase={} --- cancelTransaction: bodyCancel={}", logbase, bodyCancel)
 
-        val responseCancel = callApiComponent.postForm(
+        log.info("logbase={} --- cancelTransaction: bodyCancel={}", logbase, bodyCancel)
+        val responseCancel = apiCaller.postForm(
             url = epayConfig.cancelUrl,
             body = bodyCancel,
             responseType = PaymentCancelResponseDto::class.java
@@ -368,6 +361,12 @@ class PaymentService(
      * @return: true | false
      */
     private fun verifyMerchantToken(dto: PaymentCallbackDto): Boolean {
+        // FORCE FAILED
+        if( dto.merchantToken.isBlank() || dto.merTrxId.isBlank()){
+            log.info("logbase={} ---verifyMerchantToken(FAIL): dto={}}", logbase, dto)
+            return  false
+        }
+
         // VERIFY merchantToken
         val merchantTokenCallbackRaw = dto.resultCd + dto.timeStamp + dto.merTrxId + dto.trxId + epayConfig.merId + dto.amount + epayConfig.encodeKey
         val merchantTokenCallback = sha256(merchantTokenCallbackRaw)

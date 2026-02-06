@@ -2,13 +2,11 @@ package com.vietq.demo_map_app_backend.controller
 
 import com.vietq.demo_map_app_backend.dto.OrderAdminResponseDto
 import com.vietq.demo_map_app_backend.dto.OrderCancelPartialDto
-import com.vietq.demo_map_app_backend.dto.OrderResponseDto
 import com.vietq.demo_map_app_backend.service.OrderAdminService
 import com.vietq.demo_map_app_backend.utils.SuccessResponse
 import com.vietq.demo_map_app_backend.utils.toSuccessResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
-import org.apache.coyote.BadRequestException
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable

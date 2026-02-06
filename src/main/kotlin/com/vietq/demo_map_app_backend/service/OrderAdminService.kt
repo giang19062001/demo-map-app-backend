@@ -27,10 +27,10 @@ class OrderAdminService(
     private  val logbase = "OrderAdminService"
     private val log = LoggerFactory.getLogger(PaymentService::class.java)
 
-    fun getAdminOrders(userId: Long): List<OrderAdminResponseDto> {
-        return orderAdminRepository.getAdminOrders(userId)
-    }
-
+    /**
+     * Get order info and re-calculate cart data with items cart was cancelled
+     * @return: OrderResponseDto
+     */
     fun getAdminOrderByCode(orderCode: String): OrderAdminResponseDto? {
         val order = orderAdminRepository.getAdminOrderByCode(orderCode)
         return order?.let {
@@ -188,6 +188,10 @@ class OrderAdminService(
         }
     }
 
+    /**
+     * the purpose is calculated how much the current item will cost to cancel
+     * @return: Price to cancel of item
+     */
     private fun calculateItemPriceToCancel(price: Long, quantity: Int, totalAmount: Long, cartTotal: Long, refundedAmount: Long, isLastItem: Boolean = false): Long {
         val remainingRefundable = totalAmount - refundedAmount
 
@@ -209,4 +213,9 @@ class OrderAdminService(
         log.info("logbase={} ---calculateItemPriceToCancel: calculatedRefund={}, remainingRefundable={}", logbase, calculatedRefund, remainingRefundable)
         return minOf(calculatedRefund, remainingRefundable)
     }
+
+    fun getAdminOrders(userId: Long): List<OrderAdminResponseDto> {
+        return orderAdminRepository.getAdminOrders(userId)
+    }
+
 }

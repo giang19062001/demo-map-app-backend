@@ -6,7 +6,6 @@ import org.springframework.stereotype.Repository
 import com.study.jooq.tables.OrderEpay.Companion.ORDER_EPAY
 import com.vietq.demo_map_app_backend.dto.PaymentEpayResponseDto
 import com.vietq.demo_map_app_backend.mapper.PaymentMapper
-import org.aspectj.apache.bcel.generic.RET
 
 @Repository
 class PaymentRepository(
@@ -14,6 +13,9 @@ class PaymentRepository(
     private val paymentMapper: PaymentMapper
 ) {
 
+    /**
+     * the purpose is insert new Epay payment data OR update Epay payment data if ORDERCODE existed
+     */
     fun upsertPayment(dto: UpsertPaymentDto): Int {
         val affected = dsl.insertInto(ORDER_EPAY)
             .set(ORDER_EPAY.ORDERCODE, dto.orderCode)
@@ -61,6 +63,23 @@ class PaymentRepository(
         return affected
     }
 
+    /**
+     * the purpose is update 'remainAmount' for refund case
+     */
+    fun changeOrderRemainAmount(orderCode: String, remainAmount: String, status: String): Boolean {
+        return dsl
+            .update(ORDER_EPAY)
+            .set(ORDER_EPAY.REMAINAMOUNT, remainAmount)
+            .set(ORDER_EPAY.STATUS, status)
+            .where(
+                ORDER_EPAY.ORDERCODE.eq(orderCode)
+            )
+            .execute() > 0
+    }
+
+    /**
+     * the purpose is get Epay payment info
+     */
     fun getPaymentByOrderCode(orderCode: String): PaymentEpayResponseDto? {
         return dsl
             .selectFrom(ORDER_EPAY)
